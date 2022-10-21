@@ -34,7 +34,7 @@ class Option_Solver():
         for j in range(self.iteration_steps):
             # Fixpoint Iteration:
             for i in range(self.interpolation_base - 1):
-                self.Btau_vec_new[i] = self.__B_plus(self.tau_grid[i]) # Iteration per tau
+                self.Btau_vec_new[i] = self.B_plus(self.tau_grid[i]) # Iteration per tau
             self.Btau_vec_new[-1] = self.B_at_zero
             self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec_new]) # create H-curve
             self.B_new = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau))) # create B
@@ -42,27 +42,34 @@ class Option_Solver():
             self.B = self.B_new
             self.Btau_vec = self.Btau_vec_new
 
-    def __B_plus(self, tau, eta=0.8):
+    def B_plus(self, tau, eta=0.8):
         """fixpoint scheme for one tau, getting Btau_new"""
         k = self.K * np.exp(-(self.r - self.q) * tau)
+        return (self.B(tau) - eta * (self.B(tau) - k * self.N(tau) / self.D(tau)))
 
-        return (self.B(tau) - eta * (self.B(tau) - k * self.__N(tau) / self.__D(tau)))
+    def B_plus_adaptive(self, tau, allowed_perc = 0.05):
+        """fixpoint scheme for one tau, getting Btau_new, adaptive"""
+        k = self.K * np.exp(-(self.r - self.q) * tau)
+        eta = 1
+        ratio = allowed_perc + 1.1
+        while ratio > 1 + allowed_perc  or ratio < 1 - allowed_perc:
+            eta *= (2 / 3)
+            Btau_new = (self.B(tau) - eta * (self.B(tau) - k * self.N(tau) / self.D(tau)))
+            ratio  = Btau_new / B(tau)
+        return Btau_new
 
-    def __N(self, tau):
+    def N(self, tau):
         """N term of fixpoint scheme"""
         def integrand(u):
             return np.exp(self.r * u) * stats.norm.cdf(self.__d_minus(tau - u, self.B(tau) / self.B(u)))
-
         a = stats.norm.cdf(self.__d_minus(tau, self.B(tau) / self.K))
-
         return a + self.r * si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
 
-    def __D(self, tau):
+    def D(self, tau):
         """D term of fixpoint scheme"""
         def integrand(u):
             return np.exp(self.q * u) * stats.norm.cdf(self.__d_plus(tau - u, self.B(tau) / self.B(u)))
         a = stats.norm.cdf(self.__d_plus(tau, self.B(tau) / self.K))
-
         return a + self.q * si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
 
     def __d_minus(self, tau, X):
