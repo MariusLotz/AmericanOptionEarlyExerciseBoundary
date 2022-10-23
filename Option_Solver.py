@@ -6,7 +6,7 @@ import QD_plus_exercise_boundary as QD_plus
 import BS_formulas as B
 
 class Option_Solver():
-    def __init__(self, interest_rate, dividend, volatility, strike, maturity, l=113, m=21, n=55):
+    def __init__(self, interest_rate, dividend, volatility, strike, maturity, l=113, m=21, n=85):
         self.r = interest_rate
         self.q = dividend
         self.sigma = volatility
@@ -18,19 +18,22 @@ class Option_Solver():
         self.B_at_zero = self.K * min(1, self.r / self.q)
         self.__initial()
         self.fail = False
+        self.negativ_sqrt = True
 
     def __initial(self):
         """setting up stuff"""
-        self.cheby_H = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
-        self.tau_grid = [x ** 2 for x in self.cheby_H.cheby_points]
+        #self.cheby_H = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
+        self.cheby_B = Chebyshev.Interpolation(self.interpolation_base, self.T, 0)
+        #self.tau_grid = [x ** 2 for x in self.cheby_H.cheby_points]
+        self.tau_grid = self.cheby_B.cheby_points
         self.QD_plus_B_vec = QD_plus.exercise_boundary(self.K, self.r, self.q, self.sigma, self.tau_grid)
         self.Btau_vec = self.QD_plus_B_vec
-        self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec])
-        self.B = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))
+        #self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec])
+        self.cheby_B.fit_by_y_values(self.Btau_vec)
+        self.B = self.cheby_B.value
+        #self.B = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))
         self.Btau_vec_new = [0] * len(self.Btau_vec)
         self.B_new = None
-
-
 
     def create_boundary_after_fail(self):
         """calculate the boundary function of an American Option"""
@@ -48,7 +51,6 @@ class Option_Solver():
             self.B = self.B_new
             self.Btau_vec = self.Btau_vec_new
 
-
     def create_boundary(self):
         """calculate the boundary function of an American Option"""
         for j in range(self.iteration_steps):
@@ -57,8 +59,9 @@ class Option_Solver():
                 self.Btau_vec_new[i] = self.B_plus_adaptive(self.tau_grid[i]) # Iteration per tau
             self.Btau_vec_new[-1] = self.B_at_zero
             self.B_diff(self.B, self.Btau_vec_new)
-            self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec_new]) # create H-curve
-            self.B_new = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau))) # create B
+            self.B_new = self.cheby_B.fit_by_y_values(self.Btau_vec_new)
+            #self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec_new]) # create H-curve
+            #self.B_new = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau))) # create B
             self.B = self.B_new
             if self.Btau_vec[0] == 0 or np.isnan(self.Btau_vec[0]) or np.isinf(self.Btau_vec[0]):
                 self.fail = True
@@ -84,15 +87,15 @@ class Option_Solver():
             Btau_new = (self.B(tau) - eta * (self.B(tau) - k * self.N(tau) / self.D(tau)))
             ratio  = Btau_new / self.B(tau)
             #print("ratio:", ratio)
-            #print("Btau_new:", Btau_new)
+            print("Btau_new:", Btau_new)
         return Btau_new
 
     def B_diff(self, Btau, Btau_new):
         sum = 0
         for i in range(len(self.tau_grid)-1):
-            dt = abs(self.tau_grid[i+1] - self.tau_grid[i])
+            #dt = abs(self.tau_grid[i+1] - self.tau_grid[i])
             DB = abs(Btau_new[i] - Btau(self.tau_grid[i]))
-            sum += DB * dt
+            sum += DB
         print(sum)
 
     def N(self, tau):
@@ -127,15 +130,24 @@ class Option_Solver():
 
     def __H(self, B):
         """B -> ln(B/X)^2"""
-        a = np.log(B / (self.K**2))
-        if a<-1E-8 or np.isnan(0):
-            return 1E-5
+        a = np.log(B / self.K)**2
+        if abs(a) < -1E-12 or np.isnan(0):
+            self.negativ_sqrt = True
+            return 1E-11
         else:
-            return a
+            if a < 0:
+                self.negativ_sqrt = True
+                return a
+            else:
+                self.negativ_sqrt = False
+                return a
 
     def __H_inverse(self, H):
         """H(x) -> X * exp(+-sqrt(H) """
-        return self.K * np.exp(-np.sqrt(H))
+        if self.negativ_sqrt:
+            return self.B_at_zero * np.exp(-np.sqrt(H))
+        else:
+            return self.B_at_zero * np.exp(np.sqrt(H))
 
     def premium(self, S, tau):
         """American premium, self.B used"""
@@ -175,7 +187,6 @@ class Option_Solver():
             raise ValueError("tau can not be larger than T")
         else:
             return self.premium(S, tau) + B.put_price(S, self.K, self.r, self.q, self.sigma, tau)
-
 
 def main():
     option = Option_Solver(0.005, 0.006, 0.35, 100, 1)
