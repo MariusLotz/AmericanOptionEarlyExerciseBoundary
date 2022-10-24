@@ -1,77 +1,108 @@
 import numpy as np
 import scipy.stats as stats
-import scipy.integrate as si
+
 import Chebyshev
 import QD_plus_exercise_boundary as QD_plus
 import BS_formulas as B
+from FixpointsystemB import FixpointsystemB
 
-class Option_Solver():
-    def __init__(self, interest_rate, dividend, volatility, strike, maturity, l=113, m=21, n=15):
+class Option_Solver(FixpointsystemB):
+    def __init__(self, interest_rate, dividend, volatility, strike, maturity, option_type = 'Put', l=113, m=21, n=15):
         self.r = interest_rate
         self.q = dividend
         self.sigma = volatility
         self.K = strike
         self.T = maturity
-        self.interpolation_base = m
-        self.integration_base = l
-        self.iteration_steps = n
-        self.B_at_zero = self.K * min(1, self.r / self.q)
-        self.__initial()
-
-    def __initial(self):
-        """setting up stuff"""
-        self.cheby_H = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
-        self.tau_grid = [x ** 2 for x in self.cheby_H.cheby_points]
-        self.QD_plus_B_vec = QD_plus.exercise_boundary(self.K, self.r, self.q, self.sigma, self.tau_grid)
-        self.Btau_vec = self.QD_plus_B_vec
-        self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec])
-        self.B = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))
-        self.Btau_vec_new = [0] * len(self.Btau_vec)
+        self.interpolation_base = m # number of basis points for the Chebyshev polynomial
+        self.integration_base = l # number of basis points for the Gauss quadrature
+        self.iteration_steps = n # number of fixpoint iteration steps
+        self.Btau_vec = None
+        self.B = None
+        self.Btau_vec_new = None
         self.B_new = None
+        if option_type == "Put":
+            self.put_option = True
+            self.r_intern = self.r
+            self.q_intern = self.q
+        elif option_type == "Call":
+            self.put_option = False
+            # using the fact that B_C(tau, r, q) = K^2 / B_P(tau, r, q)
+            self.r_intern = self.q
+            self.q_intern = self.r
+        else:
+            raise ValueError("option_type has to be 'Put' or 'Call'")
+        self.B_at_zero = self.K * min(1, self.r_intern / self.q_intern)
+        self.__initial_boundary()
+
+    def premium(self, S, tau, boundary = None):
+        """American premium for given boundary=exact_boundary.
+        boundary_input must be ???..."""
+        def integrand(u):
+            z = S / boundary(u)
+            a = self.r_intern * self.K * np.exp(-self.r_intern * (tau - u)) * stats.norm.cdf(-self.__d_minus(tau - u, z))
+            b = self.q_intern * S * np.exp(-self.q_intern * (tau - u)) * stats.norm.cdf(-self.__d_plus(tau - u, z))
+            return a - b
+        if tau > self.T: raise ValueError("tau can not be larger than the maturity!")
+        if tau < 0: raise ValueError("tau can not be negativ!")
+        if S < 0: raise ValueError("stock price can not be negativ!")
+        if boundary == None and self.B == None:
+            print("""QD_plus boundary was used. Therefore outcome will be an approximate premium. 
+            Specify boundary you like to use, or run '.create_boundary()' first to use exact boundary!""")
+            self.cheby_H.fit_by_y_values([self.__H(B) for B in self.QD_plus_B_vec]) # create H-curve
+            boundary = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau))) # define B-curve
+        if type(boundary) == list:
+            boundary = None ### NOTF
+        else:
+            boundary = self.B
+        return si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
+
+    def european_put_price(self, S, tau):
+        return B.put_price(S, self.K, self.r_intern, self.q_intern, self.sigma, tau)
+
+    def european_call_price(self, S, tau):
+        return B.call_price(S, self.K, self.r_intern, self.q_intern, self.sigma, tau)
+
+    def american_put_price(self, S, tau):
+            return self.premium(S, tau) + self.european_put_price(self, S, tau)
+
+    def american_call_price(self, S, tau):
+        return self.premium(S, tau) + self.european_call_price(self, S, tau)
+
 
     def create_boundary(self):
         """calculate the boundary function of an American Option"""
+        self.Btau_vec = self.QD_plus_B_vec
+        self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec])
+        self.B = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))
+        self.Btau_vec_new = [0] * len(self.Btau_vec)
         for j in range(self.iteration_steps):
-            # Fixpoint Iteration:
+            # Fixpoint Iteration for each tau:
             for i in range(self.interpolation_base - 1):
-                self.Btau_vec_new[i] = self.__B_plus(self.tau_grid[i]) # Iteration per tau
-            self.Btau_vec_new[-1] = self.B_at_zero
+                self.Btau_vec[i] = self.__B_plus(self.tau_grid[i])  # Iteration per tau
+            self.Btau_vec_new[-1] = self.B_at_zero  # B value close to maturity
             self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Btau_vec_new]) # create H-curve
             self.B_new = lambda tau : self.__H_inverse(self.cheby_H.value(np.sqrt(tau))) # create B
-
             self.B = self.B_new
             self.Btau_vec = self.Btau_vec_new
 
-    def __B_plus(self, tau, eta=0.8):
+    def __initial_boundary(self):
+        """setting up starting boundary"""
+        self.cheby_H = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
+        self.tau_grid = [x ** 2 for x in self.cheby_H.cheby_points]
+        self.QD_plus_B_vec = QD_plus.exercise_boundary(self.K, self.r_intern, self.q_intern, self.sigma, self.tau_grid)
+
+    def __B_plus(self, tau, eta=0.5):
         """fixpoint scheme for one tau, getting Btau_new"""
-        k = self.K * np.exp(-(self.r - self.q) * tau)
+        #b = 1e-03 # for f_prime approximation
+        #B_plus = lambda tau, B, b : B(tau) + b
+        k = self.K * np.exp(-(self.r_intern - self.q_intern) * tau)
+        f = lambda tau, B : k * self.N(tau) / self.D(tau)
+        #f_prime = lambda tau, B, b: (f(tau, B_plus(tau, B, b)) - f(tau, B)) / b
 
-        return (self.B(tau) - eta * (self.B(tau) - k * self.__N(tau) / self.__D(tau)))
+        #print(f_prime(tau, self.B, b))
+        #return self.B(tau) + eta * (self.B(tau) - f(tau, self.B(tau))) / (f_prime(tau, self.B, b) - 1)
+        return self.B(tau) + eta * (self.B(tau) - f(tau, self.B(tau))) / ( - 1)
 
-    def __N(self, tau):
-        """N term of fixpoint scheme"""
-        def integrand(u):
-            return np.exp(self.r * u) * stats.norm.cdf(self.__d_minus(tau - u, self.B(tau) / self.B(u)))
-
-        a = stats.norm.cdf(self.__d_minus(tau, self.B(tau) / self.K))
-
-        return a + self.r * si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
-
-    def __D(self, tau):
-        """D term of fixpoint scheme"""
-        def integrand(u):
-            return np.exp(self.q * u) * stats.norm.cdf(self.__d_plus(tau - u, self.B(tau) / self.B(u)))
-        a = stats.norm.cdf(self.__d_plus(tau, self.B(tau) / self.K))
-
-        return a + self.q * si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
-
-    def __d_minus(self, tau, X):
-        """d_- from Black Scholes formula"""
-        return (np.log(X) + (self.r - self.q) * tau - 0.5 * self.sigma**2 * tau) / (self.sigma * np.sqrt(tau))
-
-    def __d_plus(self, tau, X):
-        """d_+ from Black Scholes formula"""
-        return (np.log(X) + (self.r - self.q) * tau + 0.5 * self.sigma**2 * tau) / (self.sigma * np.sqrt(tau))
 
     def __H(self, B):
         """B -> ln(B/X)^2"""
@@ -81,42 +112,21 @@ class Option_Solver():
         """H(x) -> X * exp(+-sqrt(H) """
         return self.B_at_zero * np.exp(-np.sqrt(H))
 
-    def premium(self, S, tau):
-        """American premium, self.B used"""
-        def integrand(u):
-            z = S / self.B(u)
-            a = self.r * self.K * np.exp(-self.r * (tau - u)) * stats.norm.cdf(-self.__d_minus(tau - u, z))
-            b = self.q * S * np.exp(-self.q * (tau - u)) * stats.norm.cdf(-self.__d_plus(tau - u, z))
-            return a - b
-        return si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
 
-    def QD_plus_premium(self, S, tau):
-        """American premium, QD_plus_B_vec used"""
-        cheby_QD_plus = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
-        cheby_QD_plus.fit_by_y_values([self.__H(B) for B in self.QD_plus_B_vec])  # create H-curve
-        B_QD = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))  # create B
-        def integrand(u):
-            z = S / B_QD(u)
-            a = self.r * self.K * np.exp(-self.r * (tau - u)) * stats.norm.cdf(-self.__d_minus(tau - u, z))
-            b = self.q * S * np.exp(-self.q * (tau - u)) * stats.norm.cdf(-self.__d_plus(tau - u, z))
-            return a - b
-        return si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
 
-    def premium_via_boundary_vec(self, S, tau, boundary):
-        """American premium for given boundary"""
-        cheby_boundary = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
-        cheby_boundary.fit_by_y_values([self.__H(B) for B in boundary])  # create H-curve
-        B_boundary = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))  # create B
-        def integrand(u):
-            z = S / B_boundary(u)
-            a = self.r * self.K * np.exp(-self.r * (tau - u)) * stats.norm.cdf(-self.__d_minus(tau - u, z))
-            b = self.q * S * np.exp(-self.q * (tau - u)) * stats.norm.cdf(-self.__d_plus(tau - u, z))
-            return a - b
-        return si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
 
-    def put_price(self, S, tau):
-        if tau>self.T:
-            raise ValueError("tau can not be larger than T")
-        else:
-            return self.premium(S, tau) + B.put_price(S, self.K, self.r, self.q, self.sigma, tau)
+
+def main():
+    r, q, sigma, K, T, = 0.005, 0.007, 0.35, 100, 1.0
+    option = Option_Solver(r, q, sigma, K, T, m=22)
+    option.create_boundary()
+    print((option.QD_plus_B_vec))
+    #print(option.tau_grid)
+    print(option.Btau_vec)
+
+
+
+
+if __name__ =="__main__":
+    main()
 
