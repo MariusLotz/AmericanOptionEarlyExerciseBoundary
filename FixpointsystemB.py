@@ -6,7 +6,6 @@ class FixpointsystemB():
     """Collection of functions defining a fixpointsystem
     for the American Option Early Exercise Boundary
     """
-
     def d_minus(self, tau, X):
         """d_- from Black Scholes formula"""
         return (np.log(X) + (self.r_internal - self.q_internal) * tau - 0.5 * self.sigma ** 2 * tau) / (self.sigma * np.sqrt(tau))

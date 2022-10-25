@@ -26,8 +26,7 @@ class Option_Solver(FixpointsystemB):
         self.B_new = None
         self.B_at_zero = self.K
         self.option_type = option_type
-        ### Put-Call-Symmetry Trick ###
-        ### using the fact that B_C(tau, r, q) = K^2 / B_P(tau, r, q) ###
+        ### Put-Call-Symmetry Trick # using the fact that B_C(tau, r, q) = K^2 / B_P(tau, r, q) ###
         if self.r >= self.q and self.option_type == 'Put':  # Put/Put
             self.internal_option_type = 'Put'
             self.r_internal = self.r
@@ -54,24 +53,25 @@ class Option_Solver(FixpointsystemB):
 
     def premium(self, S, tau, boundary = None):
         """American premium for given boundary=exact_boundary.
-        boundary_input must be ???..."""
+        boundary_input must be ???..."""  ## NOTF
         def integrand(u):
             z = S / boundary(u)
-            a = self.r_intern * self.K * np.exp(-self.r_intern * (tau - u)) * stats.norm.cdf(-self.__d_minus(tau - u, z))
-            b = self.q_intern * S * np.exp(-self.q_intern * (tau - u)) * stats.norm.cdf(-self.__d_plus(tau - u, z))
+            a = self.r_internal * self.K * np.exp(-self.r_internal * (tau - u)) * stats.norm.cdf(-self.d_minus(tau - u, z))
+            b = self.q_internal * S * np.exp(-self.q_internal * (tau - u)) * stats.norm.cdf(-self.d_plus(tau - u, z))
             return a - b
         if tau > self.T: raise ValueError("tau can not be larger than the maturity!")
         if tau < 0: raise ValueError("tau can not be negativ!")
         if S < 0: raise ValueError("stock price can not be negativ!")
-        if boundary == None and self.B == None:
+        if boundary == None and self.Early_exercise_curve == None:
             print("""QD_plus boundary was used. Therefore outcome will be an approximate premium. 
-            Specify boundary you like to use, or run '.create_boundary()' first to use exact boundary!""")
-            self.cheby_H.fit_by_y_values([self.__H(B) for B in self.QD_plus_B_vec]) # create H-curve
-            boundary = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau))) # define B-curve
+            Specify boundary you like to use, or run '.create_boundary()' first to use exact boundary!
+            """)
+            self.cheby_H.fit_by_y_values([self.__H(B) for B in self.QD_plus_B_vec])  # create H-curve
+            boundary = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))  # define B-curve
         if type(boundary) == list:
-            boundary = None ##NOTF
+            print("not coded yet")  ## NOTF
         else:
-            boundary = self.B
+            boundary = self.Early_exercise_curve
         return si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
 
     def european_put_price(self, S, tau):
@@ -81,11 +81,14 @@ class Option_Solver(FixpointsystemB):
         return B.call_price(S, self.K, self.r, self.q, self.sigma, tau)
 
     def american_put_price(self, S, tau):
-        if self.option_type != 'Put':
-            raise TypeError("")
+        if self.option_type == 'Call':
+            raise TypeError("Wrong option type ('Call')")
+        else:
             return self.premium(S, tau) + self.european_put_price(self, S, tau)
 
     def american_call_price(self, S, tau):
+        if self.option_type == 'Put':
+            raise TypeError("Wrong option type ('Put')")
         return self.premium(S, tau) + self.european_call_price(self, S, tau)
 
     def create_boundary(self):
@@ -113,13 +116,11 @@ class Option_Solver(FixpointsystemB):
         self.cheby_H.fit_by_y_values([self.__H(B) for B in self.Early_exercise_vec])  # create H-curve
         self.Early_exercise_curve = lambda tau: self.__H_inverse(self.cheby_H.value(np.sqrt(tau)))  # create B
 
-
     def __initial_boundary(self):
         """setting up starting boundary"""
         self.cheby_H = Chebyshev.Interpolation(self.interpolation_base, np.sqrt(self.T), 0)
         self.tau_grid = [x ** 2 for x in self.cheby_H.cheby_points]
         self.QD_plus_B_vec = QD_plus.exercise_boundary(self.K, self.r_internal, self.q_internal, self.sigma, self.tau_grid, self.internal_option_type)
-
 
     def __H(self, B):
         """B -> ln(B/X)^2"""
@@ -138,6 +139,4 @@ class Option_Solver(FixpointsystemB):
             else:
                 return self.B_at_zero * np.exp(np.sqrt(H_min))
 
-if __name__ =="__main__":
-    main()
 
