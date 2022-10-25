@@ -7,18 +7,16 @@ import scipy.optimize as sco
 import scipy.stats as stats
 import BS_formulas as bs
 
-P = 0.01  # minimal boundary value allowed
-
-
+alpha = 1e-7 # minimal boundary value allowed
+beta = 1e-07 # minimal value for sigma, r, q
+gamma = 1e-06 # minimal value for tau
 def l(h, w, r, sigma):
     """lambda in paper"""
     return 0.5 * (-(w - 1) - np.sqrt((w - 1) ** 2 + (8 * r / (sigma ** 2 * h))))
 
-
 def ll(h, w, r, sigma):
     """lambda differential in paper"""
     return 2 * r / (sigma ** 2 * h ** 2 * np.sqrt((w - 1) ** 2 + (8 * r / (sigma ** 2 * h))))
-
 
 def c0(h, w, S, K, r, q, sigma, tau):
     """c0 in paper"""
@@ -27,23 +25,35 @@ def c0(h, w, S, K, r, q, sigma, tau):
     c = ll(h, w, r, sigma) / (2 * l(h, w, r, sigma) + w - 1)
     return -a * ((1 / h) - b + c)
 
-
 def implicit_exercise_boundary_function(S, K, r, q, sigma, tau):
     """approximate implicit equation for boundary in paper"""
+    if sigma < beta: sigma = beta  ##NOTF
+    if r < beta: r = beta
+    #if q < beta: q = beta
+    if tau < gamma: tau = gamma
     h = 1 - np.exp(-r * tau)
     w = 2 * (r - q) * sigma ** (-2)
     a = (l(h, w, r, sigma) + c0(h, w, S, K, r, q, sigma, tau)) * (K - S - bs.put_price(S, K, r, q, sigma, tau))
     return -np.exp(-q * tau) * stats.norm.cdf(-bs.d_plus(S, K, r, q, sigma, tau)) + a / S + 1
 
 
-def exercise_boundary(K, r, q, sigma, tau_points):
+def exercise_boundary(K, r, q, sigma, tau_points, option_type):
     """Calculating an approximative exercise boundary of an American Option for given points in time"""
     exercise_boundary = []
-    for i in range(len(tau_points)-1):
-        solution = sco.root_scalar(f=implicit_exercise_boundary_function, args=(K, r, q, sigma, tau_points[i]),
-                                   method='ridder', bracket=[P, K])
-        exercise_boundary.append(solution.root)
-    exercise_boundary.append(min(K, r/q * K))
+    if option_type == 'Put':
+        for i in range(len(tau_points)-1):
+            solution = sco.root_scalar(f=implicit_exercise_boundary_function,
+                                       args=(K, r, q, sigma, tau_points[i]),
+                                       method='ridder', bracket=[alpha * K, K])
+            exercise_boundary.append(solution.root)
+    else:  # use Put-Call-Symmetry Trick here aswell
+        for i in range(len(tau_points)-1):
+            solution = sco.root_scalar(f=implicit_exercise_boundary_function,
+                                       args=(K, q, r, sigma, tau_points[i]),
+                                       method='ridder', bracket=[alpha * K, K])  ##NOTF
+            bval = K**2 / solution.root
+            exercise_boundary.append(bval)
+    exercise_boundary.append(K)
     return exercise_boundary
 
 def exercise_boundary_singleton(K, r, q, sigma, tau):
@@ -51,4 +61,4 @@ def exercise_boundary_singleton(K, r, q, sigma, tau):
         return min(K, r/q * K)
     else:
         return sco.root_scalar(f=implicit_exercise_boundary_function, args=(K, r, q, sigma, tau),
-                                   method='ridder', bracket=[P, K]).root
+                                   method='ridder', bracket=[alpha * K, K]).root

@@ -11,7 +11,7 @@ def use_case():
     # create instance:
     cheby = Chebyshev.Interpolation()
 
-    # define approximation intervall and base count:
+    # define approximation interval and base count:
     cheby.fit_cheby_points(3, -5, 5)
     assert abs(cheby.cheby_points[0] - (-5)) < ERR
     assert abs(cheby.cheby_points[1] - (0)) < ERR
