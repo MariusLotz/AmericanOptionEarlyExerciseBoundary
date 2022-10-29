@@ -72,8 +72,14 @@ def exercise_boundary(K, B_zero, r, q, sigma, tau_points, option_type):
     return exercise_boundary
 
 def exercise_boundary_singleton(K, r, q, sigma, tau):
-    if abs(tau - 0) < 1.49e-05:
+    if abs(tau - 0) < 1.49e-07:
         return min(K, r/q * K)
     else:
-        return sco.root_scalar(f=implicit_exercise_boundary_function, args=(K, r, q, sigma, tau),
+        try:
+            boundary_val = sco.root_scalar(f=implicit_exercise_boundary_function, args=(K, r, q, sigma, tau),
                                    method='ridder', bracket=[alpha * K, K]).root
+        except:
+            boundary_val =  sco.root_scalar(f=implicit_exercise_boundary_function,
+                                           args=(K, r, q, sigma, tau),
+                                           method='secant', x0 =alpha * K, x1= K)
+        return boundary_val

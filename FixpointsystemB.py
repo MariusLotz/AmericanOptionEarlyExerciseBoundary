@@ -49,4 +49,49 @@ class FixpointsystemB():
         diff = abs(B_plus - self._B(tau))
         if diff > self.max_diff:
             self.max_diff = diff
+            #print(diff)
+            #print(self.used_iteration_steps)
+        return B_plus
+
+    def _B_plus_aggressive_cut_off(self, tau):
+        """fixpoint scheme for one tau, creating B_plus = F(B), not finished""" # NOTF
+        eta = 1.6
+        k = self.K * np.exp(-(self.r - self.q) * tau)
+        nabla = (self._B(tau) - k * self._N(tau) / self._D(tau))
+        B_plus = self._B(tau) - eta * nabla
+        diff = abs(B_plus - self._B(tau))
+        if diff > self.max_diff:
+            self.max_diff = diff
+            eta = 0.9
+            B_plus = self._B(tau) - eta * (self._B(tau) - k * self._N(tau) / self._D(tau))
+        return B_plus
+
+    def _B_plus_aggressive_eta(self, tau):
+        """fixpoint scheme for one tau, creating B_plus = F(B), not properly tested,
+        no use for high precision pricing, otherwise when working seems faster than other etas"""
+        eta = 1.6
+        k = self.K * np.exp(-(self.r - self.q) * tau)
+        B_plus = self._B(tau) - eta * (self._B(tau) - k * self._N(tau) / self._D(tau))
+        diff = abs(B_plus - self._B(tau))
+        if diff > self.max_diff:
+            self.max_diff = diff
+        return B_plus
+
+    def _B_plus_moving_eta(self, tau):
+        """fixpoint scheme for one tau, creating B_plus = F(B),
+        not adjusted yet, dont use.""" #NOTF
+        if self.used_iteration_steps <= 7:
+            if self.max_diff >= 5:
+                eta = 0.1
+            elif self.max_diff < 5 and self.max_diff > 0.5:
+                eta = 0.5 * 1 / self.max_diff
+            else:
+                eta = 1.3
+        else:
+            eta = 1
+        k = self.K * np.exp(-(self.r - self.q) * tau)
+        B_plus = self._B(tau) - eta * (self._B(tau) - k * self._N(tau) / self._D(tau))
+        diff = abs(B_plus - self._B(tau))
+        if diff > self.max_diff:
+            self.max_diff = diff
         return B_plus

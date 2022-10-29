@@ -15,6 +15,8 @@ def test():
 def masstesting():
     rr.seed(1)  # seed
     Z = 100 # passes
+    sum = 0
+    max = 0
     for i in range(Z):
         r = rr.uniform(0, 0.1)
         q = rr.uniform(0, 0.1)
@@ -27,7 +29,9 @@ def masstesting():
         option = os.Option_Solver(r, q, sigma, K, T, option_type='Put', stop_by_diff=1e-6)
         option.create_boundary()
         print(option.max_diff)
-        print(option.used_iteration_steps)
+        #print(option.used_iteration_steps)
+        sum += option.used_iteration_steps
+        if max < option.used_iteration_steps: max = option.used_iteration_steps
             #print("r, q, sigma, K, S, T, tau: ", r, q, sigma, K, S, T, tau)
             #print(option.Early_exercise_vec)
             #print(option.premium(S, tau))
@@ -35,6 +39,8 @@ def masstesting():
             #print(option.used_iteration_steps)
             #print(option.training_data(10))
             #print(option.Early_exercise_vec)
+    print(sum)
+    print(max)
 
 
 

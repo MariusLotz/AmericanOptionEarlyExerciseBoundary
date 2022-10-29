@@ -7,11 +7,11 @@ import QD_plus_exercise_boundary as QD_plus
 import BS_formulas as B
 from FixpointsystemB import FixpointsystemB
 
-H_min = 1e-35
+H_min = 1e-35  # min-parameter for H-transformed value due to overflow
 
 class Option_Solver(FixpointsystemB):
     def __init__(self, interest_rate, dividend_yield, volatility, strike, maturity,
-                 option_type = 'Put', l=113, m=21, n=15, stop_by_diff = None):
+                 option_type = 'Put', l=113, m=21, n=15, stop_by_diff=1e-6): # set stop_by_diff=None for fixed n
         self.r = interest_rate
         self.q = dividend_yield
         self.sigma = volatility
@@ -28,8 +28,9 @@ class Option_Solver(FixpointsystemB):
         self._B_new = None
         self.used_iteration_steps = 0
         self.stop_by_diff = stop_by_diff
-        self.max_diff = 0
+        self.max_diff = -1.0
         self.option_type = option_type
+        # B(0+) = K * max(1, r/q) (Call) and B(0+) = K * min(1, r/q) (Put) #
         if self.option_type == 'Put' and self.q > self.r:
             self._B_zero_plus = self.K * self.r / self.q
         elif self.option_type == 'Call' and self.q < self.r:
@@ -91,14 +92,12 @@ class Option_Solver(FixpointsystemB):
     def _loop_end(self, step):
         """check condition for ending main loop"""
         if type(self.stop_by_diff) == float:
-            if self.stop_by_diff < self.max_diff:
-                self.used_iteration_steps = step
+            if self.stop_by_diff > self.max_diff:
                 return True
             else:
                 return False
         else:
             if self._iteration_steps <= step:
-                self.used_iteration_steps = step
                 return True
             else:
                 return False
@@ -114,21 +113,21 @@ class Option_Solver(FixpointsystemB):
 
     def create_boundary(self):
         """calculate the boundary function of an American Option"""
-        step = 0
         stop_now = False
         while stop_now == False:
-            step += 1
             # Fixpoint Iteration for each tau:
             #print(self.max_diff)
             self.max_diff = 0
             for i in range(self._interpolation_base - 1):
-                self._Btau_vec_new[i] = self._B_plus(self.tau_grid[i])  # Iteration per tau
+                # might change B_plus if its not working...
+                self._Btau_vec_new[i] = self._B_plus_aggressive_eta((self.tau_grid[i]))  # Iteration per tau
             self._Btau_vec_new[-1] = self._B_zero_plus  # B value close to maturity
             self._cheby_H.fit_by_y_values([self._H(B) for B in self._Btau_vec_new])  # create H-curve
             self._B_new = lambda tau : self._H_inverse(self._cheby_H.value(np.sqrt(tau)))  # create B-curve
             self._B = self._B_new
             self._Btau_vec = self._Btau_vec_new
-            stop_now = self._loop_end(step)
+            self.used_iteration_steps += 1
+            stop_now = self._loop_end(self.used_iteration_steps)
         self.Early_exercise_vec = self._Btau_vec
         self.Early_exercise_curve = lambda tau: self._B(tau)
 
@@ -160,9 +159,6 @@ class Option_Solver(FixpointsystemB):
     def _H(self, B):
         """B -> ln(B/X)^2"""
         return np.log(B / self.K)**2
-
-    def _hH_inverse(self, H):
-        return self.K * np.exp(H)
 
     def _H_inverse(self, H):
         """H(x) -> X * exp(+-sqrt(H) """
