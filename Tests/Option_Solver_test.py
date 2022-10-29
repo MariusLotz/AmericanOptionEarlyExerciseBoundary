@@ -1,7 +1,7 @@
 import unittest
 import Option_Solver as OS
 
-RE = 10e-6  # relative difference allowed
+RE = 10e-7  # relative difference allowed
 
 class Option_Solver_tests(unittest.TestCase):
     """testcases have the form r_q_sigma_tau_K_S"""
@@ -19,7 +19,7 @@ class Option_Solver_tests(unittest.TestCase):
         r, q, sigma, tau, K, S = 0.04, 0.04, 0.2, 3, 100, 80
         option = OS.Option_Solver(r, q, sigma, K, tau)
         option.create_boundary()
-        price = option.put_price(S, tau)
+        price = option.American_price(S, tau)
         rel_diff = abs(price - 23.22834) / price
         #print(rel_diff)
         self.assertTrue(rel_diff < RE)
@@ -28,16 +28,16 @@ class Option_Solver_tests(unittest.TestCase):
         r, q, sigma, tau, K, S = 0.04, 0.04, 0.2, 3, 100, 100
         option = OS.Option_Solver(r, q, sigma, K, tau)
         option.create_boundary()
-        price = option.put_price(S, tau)
+        price = option.American_price(S, tau)
         rel_diff = abs(price - 12.60521) / price
-        #print(rel_diff)
+       # print(rel_diff)
         self.assertTrue(rel_diff < RE)
 
     def test_paper_004_004_02_3_100_120(self):
         r, q, sigma, tau, K, S = 0.04, 0.04, 0.2, 3, 100, 120
         option = OS.Option_Solver(r, q, sigma, K, tau)
         option.create_boundary()
-        price = option.put_price(S, tau)
+        price = option.American_price(S, tau)
         rel_diff = abs(price - 6.482425) / price
         #print(rel_diff)
         self.assertTrue(rel_diff < RE)

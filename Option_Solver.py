@@ -1,18 +1,19 @@
 import numpy as np
 import scipy.stats as stats
 import scipy.integrate as si
+from scipy.special import roots_legendre
 import Chebyshev
 import QD_plus_exercise_boundary as QD_plus
 import BS_formulas as B
 from FixpointsystemB import FixpointsystemB
 
-H_min = 1e-25
+H_min = 1e-35
 
 class Option_Solver(FixpointsystemB):
-    def __init__(self, interest_rate, dividend, volatility, strike, maturity,
-                 option_type = 'Put', l=113, m=21, n=15, print_err_each_step = False):
+    def __init__(self, interest_rate, dividend_yield, volatility, strike, maturity,
+                 option_type = 'Put', l=113, m=21, n=15, stop_by_diff = None):
         self.r = interest_rate
-        self.q = dividend
+        self.q = dividend_yield
         self.sigma = volatility
         self.K = strike
         self.T = maturity
@@ -25,28 +26,16 @@ class Option_Solver(FixpointsystemB):
         self._B = None
         self._Btau_vec_new = None
         self._B_new = None
-        self._B_zero_plus = self.K
+        self.used_iteration_steps = 0
+        self.stop_by_diff = stop_by_diff
+        self.max_diff = 0
         self.option_type = option_type
-        self.print_err_each_step = print_err_each_step
-        ### Put-Call-Symmetry Trick # using the fact that B_C(tau, r, q) = K^2 / B_P(tau, r, q) ###
-        if self.r >= self.q and self.option_type == 'Put':  # Put/Put
-            self._internal_option_type = 'Put'
-            self._r_internal = self.r
-            self._q_internal = self.q
-        elif self.r < self.q and self.option_type == 'Put':  # Put/Call
-            self._internal_option_type = 'Call'
-            self._r_internal = self.q
-            self._q_internal = self.r
-        elif self.r >= self.q and self.option_type == 'Call':  # Call/Put
-            self._internal_option_type = 'Put'
-            self._r_internal = self.q
-            self._q_internal = self.r
-        elif self.r < self.q and self.option_type == 'Call':  # Call/Call
-            self._internal_option_type = 'Call'
-            self._r_internal = self.r
-            self._q_internal = self.q
+        if self.option_type == 'Put' and self.q > self.r:
+            self._B_zero_plus = self.K * self.r / self.q
+        elif self.option_type == 'Call' and self.q < self.r:
+            self._B_zero_plus = self.K * self.r / self.q
         else:
-            raise ValueError("option_type has to be 'Put' or 'Call'")
+            self._B_zero_plus = self.K
         self.__initial_boundary()
         if self.r < 1e-06 or self.sigma < 1e-06:
             print("""WARNING:
@@ -63,7 +52,7 @@ class Option_Solver(FixpointsystemB):
                 if self.option_type == 'Put':
                     a = self.r * self.K * np.exp(-self.r * (tau - u)) * stats.norm.cdf(-self._d_minus(tau - u, z))
                     b = self.q * S * np.exp(-self.q * (tau - u)) * stats.norm.cdf(-self._d_plus(tau - u, z))
-                else:
+                else:  # Call:
                     a = self.q * S * np.exp(-self.q * (tau - u)) * stats.norm.cdf(self._d_plus(tau - u, z))
                     b = self.r * self.K * np.exp(-self.r * (tau - u)) * stats.norm.cdf(self._d_minus(tau - u, z))
                 return a - b
@@ -72,20 +61,19 @@ class Option_Solver(FixpointsystemB):
             make sure the boundary values are in order in regard to the '.tau_grid'
             """)
             _cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
-            _cheby_H.fit_by_y_values([self.__H(B) for B in boundary])  # create H-curve
-            boundary = lambda tau: self.__H_inverse(self._cheby_H.value(np.sqrt(tau)))  # define B-curve
+            _cheby_H.fit_by_y_values([self._H(B) for B in boundary])  # create H-curve
+            boundary = lambda tau: self._H_inverse(self._cheby_H.value(np.sqrt(tau)))  # define B-curve
         elif self.Early_exercise_curve == None:
             print("""
             QD_plus boundary was used. Therefore outcome will be an approximation only.
             Specify boundary you like to use, or run '.create_boundary()' first to use exact boundary!
             """)
             _cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
-            _cheby_H.fit_by_y_values([self.__H(B) for B in self.QD_plus_exercise_vec])  # create H-curve
-            boundary = lambda tau: self.__H_inverse(_cheby_H.value(np.sqrt(tau)))  # define B-curve
-
+            _cheby_H.fit_by_y_values([self._H(B) for B in self.QD_plus_exercise_vec])  # create H-curve
+            boundary = lambda tau: self._H_inverse(_cheby_H.value(np.sqrt(tau)))  # define B-curve
         else:
             boundary = self.Early_exercise_curve
-        return si.fixed_quad(integrand, 0, tau, n=self._integration_base)[0]
+        return max(si.fixed_quad(integrand, 0, tau, n=self._integration_base)[0], 0)
 
     def European_price(self, S, tau):
         """European optionprice via Black Scholes formula"""
@@ -96,71 +84,97 @@ class Option_Solver(FixpointsystemB):
         else:
             return B.call_price(S, self.K, self.r, self.q, self.sigma, tau)
 
-    def American_price(self, S, tau):
+    def American_price(self, S, tau, boundary=None):
         """American option price via American premium"""
         return self.premium(S, tau) + self.European_price(S, tau)
 
+    def _loop_end(self, step):
+        """check condition for ending main loop"""
+        if type(self.stop_by_diff) == float:
+            if self.stop_by_diff < self.max_diff:
+                self.used_iteration_steps = step
+                return True
+            else:
+                return False
+        else:
+            if self._iteration_steps <= step:
+                self.used_iteration_steps = step
+                return True
+            else:
+                return False
+
+    def training_data(self, n):
+        x_vec, w_vec = roots_legendre(n)
+        x_vec = np.real(x_vec)
+        #y_vec = [self.T * (x + 1) / 2 for x in x_vec]
+        y_vec = self.T * (x_vec + 1) / 2
+        #boundary_vec = [self.Early_exercise_curve(y) for y in y_vec]
+        boundary_vec = self.Early_exercise_curve(y_vec)
+        return y_vec, boundary_vec, w_vec
+
     def create_boundary(self):
         """calculate the boundary function of an American Option"""
-        self._Btau_vec = self._QD_plus_B_vec  # start with QD_plus_boundary
-        self.__cheby_H.fit_by_y_values([self.__H(B) for B in self._Btau_vec])  # create H-curve
-        self._B = lambda tau: self.__H_inverse(self.__cheby_H.value(np.sqrt(tau))) # create B-curve
-        self._Btau_vec_new = [0] * len(self._Btau_vec)
-        for j in range(self._iteration_steps):
+        step = 0
+        stop_now = False
+        while stop_now == False:
+            step += 1
             # Fixpoint Iteration for each tau:
+            #print(self.max_diff)
+            self.max_diff = 0
             for i in range(self._interpolation_base - 1):
                 self._Btau_vec_new[i] = self._B_plus(self.tau_grid[i])  # Iteration per tau
             self._Btau_vec_new[-1] = self._B_zero_plus  # B value close to maturity
-            self.__cheby_H.fit_by_y_values([self.__H(B) for B in self._Btau_vec_new])  # create H-curve
-            self._B_new = lambda tau : self.__H_inverse(self.__cheby_H.value(np.sqrt(tau)))  # create B-curve
+            self._cheby_H.fit_by_y_values([self._H(B) for B in self._Btau_vec_new])  # create H-curve
+            self._B_new = lambda tau : self._H_inverse(self._cheby_H.value(np.sqrt(tau)))  # create B-curve
             self._B = self._B_new
             self._Btau_vec = self._Btau_vec_new
-            if self.print_err_each_step:
-                print(self.errsum_to_fixpoint(self._B))
-        # Reverse Put-Call-Symmetry Trick:
-        if self.option_type != self._internal_option_type:
-            self.Early_exercise_vec = [self._B_zero_plus** 2 / x for x in self._Btau_vec]
-            self.Early_exercise_curve = lambda tau: self._B_zero_plus ** 2 / self._B(tau)
-        else:
-            self.Early_exercise_vec = self._Btau_vec
-            self.Early_exercise_curve = lambda tau: self._B(tau)
+            stop_now = self._loop_end(step)
+        self.Early_exercise_vec = self._Btau_vec
+        self.Early_exercise_curve = lambda tau: self._B(tau)
 
-    def __err_to_fixpoint(self, B, tau):
-        """returns the abs. difference between B(tau) and F(B(tau))=B_plus"""
-        return abs(self._B_plus(tau, eta=1) - B(tau))  #NOTF
+    def value_match_condition_for_tau(self, boundary, tau):
+        """Checking accuracy of given boundary"""
+        if tau < 1e-63:
+            tau = 1e-31
+        return (self.K - boundary(tau)) - self.American_price(boundary(tau), tau, boundary)
 
-    def __errsum_to_fixpoint(self, B):
-        """returns the sum of abs. difference between B(tau) and F(B(tau))=B_plus"""
-        sum = 0 #NOTF
-        for tau in self.tau_grid:
-            sum += self.err_to_fixpoint(B, tau)
-        return sum
+    def value_match_condition_vec(self, boundary = None, tau_grid = None):
+        """Accuracy vector of given boundary"""
+        if tau_grid == None: tau_grid = self.tau_grid
+        if boundary == None: boundary = self.Early_exercise_curve
+        vec = [self.value_match_condition_for_tau(boundary, tau) for tau in tau_grid]
+        return vec
 
     def __initial_boundary(self):
         """setting up starting boundary"""
-        self.__cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
-        self.tau_grid = [x ** 2 for x in self.__cheby_H.cheby_points]
-        self._QD_plus_B_vec = QD_plus.exercise_boundary(self.K, self._r_internal, self._q_internal, self.sigma, self.tau_grid, self._internal_option_type)
-        if self._internal_option_type != self.option_type:
-            self.QD_plus_exercise_vec = [self._B_zero_plus ** 2 / x for x in self._QD_plus_B_vec]
-        else:
-            self.QD_plus_exercise_vec = self._QD_plus_B_vec
+        self._cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
+        self.tau_grid = [x **2 for x in self._cheby_H.cheby_points]
+        self._QD_plus_B_vec = QD_plus.exercise_boundary(self.K, self._B_zero_plus, self.r, self.q, self.sigma, self.tau_grid, self.option_type)
+        self.QD_plus_exercise_vec = self._QD_plus_B_vec
+        self._Btau_vec = self._QD_plus_B_vec  # start with QD_plus_boundary
+        self._cheby_H.fit_by_y_values([self._H(B) for B in self._Btau_vec])  # create H-curve
+        self._B = lambda tau: self._H_inverse(self._cheby_H.value(np.sqrt(tau)))  # create B-curve
+        self.QD_plus_exercise_curve = self._B
+        self._Btau_vec_new = [0] * len(self._Btau_vec)
 
-    def __H(self, B):
+    def _H(self, B):
         """B -> ln(B/X)^2"""
-        return np.log(B / self._B_zero_plus) ** 2
+        return np.log(B / self.K)**2
 
-    def __H_inverse(self, H):
+    def _hH_inverse(self, H):
+        return self.K * np.exp(H)
+
+    def _H_inverse(self, H):
         """H(x) -> X * exp(+-sqrt(H) """
-        if self._internal_option_type == 'Put':
+        if self.option_type == 'Put':
             if np.any(H < H_min):
-                return self._B_zero_plus * np.exp(-np.sqrt(H_min))
+                return self.K * np.exp(-np.sqrt(H_min))
             else:
-                return self._B_zero_plus * np.exp(-np.sqrt(H_min))
+                return self.K * np.exp(-np.sqrt(H))
         else:  # for call:
             if np.any(H < H_min):
-                return self._B_zero_plus * np.exp(np.sqrt(H_min))
+                return self.K * np.exp(np.sqrt(H_min))
             else:
-                return self._B_zero_plus * np.exp(np.sqrt(H_min))
+                return self.K * np.exp(np.sqrt(H))
 
 
