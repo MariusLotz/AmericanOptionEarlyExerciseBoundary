@@ -6,43 +6,44 @@ class FixpointsystemB():
     """Collection of functions defining a fixpointsystem
     for the American Option Early Exercise Boundary
     """
-    def d_minus(self, tau, X):
+
+    def _d_minus(self, tau, X):
         """d_- from Black Scholes formula"""
-        return (np.log(X) + (self.r_internal - self.q_internal) * tau - 0.5 * self.sigma ** 2 * tau) / (self.sigma * np.sqrt(tau))
+        return (np.log(X) + (self._r_internal - self._q_internal) * tau - 0.5 * self.sigma ** 2 * tau) / (self.sigma * np.sqrt(tau))
 
-    def d_plus(self, tau, X):
+    def _d_plus(self, tau, X):
         """d_+ from Black Scholes formula"""
-        return (np.log(X) + (self.r_internal - self.q_internal) * tau + 0.5 * self.sigma ** 2 * tau) / (self.sigma * np.sqrt(tau))
+        return (np.log(X) + (self._r_internal - self._q_internal) * tau + 0.5 * self.sigma ** 2 * tau) / (self.sigma * np.sqrt(tau))
 
-    def N(self, tau):
+    def _N(self, tau):
         """N term of fixpoint scheme"""
         def integrand(u):
-            if self.internal_option_type == 'Put':
-                return np.exp(self.r_internal * u) * stats.norm.cdf(self.d_minus(tau - u, self.B(tau) / self.B(u)))
+            if self._internal_option_type == 'Put':
+                return np.exp(self._r_internal * u) * stats.norm.cdf(self._d_minus(tau - u, self._B(tau) / self._B(u)))
             else:
-                return np.exp(self.r_internal * u) * stats.norm.cdf(-self.d_minus(tau - u, self.B(tau) / self.B(u)))
-        if self.internal_option_type == 'Put':
-            a = stats.norm.cdf(self.d_minus(tau, self.B(tau) / self.K))
+                return np.exp(self._r_internal * u) * stats.norm.cdf(-self._d_minus(tau - u, self._B(tau) / self._B(u)))
+        if self._internal_option_type == 'Put':
+            a = stats.norm.cdf(self._d_minus(tau, self._B(tau) / self.K))
         else:
-            a = stats.norm.cdf(-self.d_minus(tau, self.B(tau) / self.K))
-        return a + self.r_internal * si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
+            a = stats.norm.cdf(-self._d_minus(tau, self._B(tau) / self.K))
+        return a + self._r_internal * si.fixed_quad(integrand, 0, tau, n=self._integration_base)[0]
 
-    def D(self, tau):
+    def _D(self, tau):
         """D term of fixpoint scheme"""
         def integrand(u):
-            if self.internal_option_type == 'Put':
-                return np.exp(self.q_internal * u) * stats.norm.cdf(self.d_plus(tau - u, self.B(tau) / self.B(u)))
+            if self._internal_option_type == 'Put':
+                return np.exp(self._q_internal * u) * stats.norm.cdf(self._d_plus(tau - u, self._B(tau) / self._B(u)))
             else:
-                return np.exp(self.q_internal * u) * stats.norm.cdf(-self.d_plus(tau - u, self.B(tau) / self.B(u)))
+                return np.exp(self._q_internal * u) * stats.norm.cdf(-self._d_plus(tau - u, self._B(tau) / self._B(u)))
 
-        if self.internal_option_type == 'Put':
-            a = stats.norm.cdf(self.d_plus(tau, self.B(tau) / self.K))
+        if self._internal_option_type == 'Put':
+            a = stats.norm.cdf(self._d_plus(tau, self._B(tau) / self.K))
         else:
-            a = stats.norm.cdf(-self.d_plus(tau, self.B(tau) / self.K))
-        return a + self.q_internal * si.fixed_quad(integrand, 0, tau, n=self.integration_base)[0]
+            a = stats.norm.cdf(-self._d_plus(tau, self._B(tau) / self.K))
+        return a + self._q_internal * si.fixed_quad(integrand, 0, tau, n=self._integration_base)[0]
 
-    def B_plus(self, tau, eta=0.9):
+    def _B_plus(self, tau, eta=0.9):
         """fixpoint scheme for one tau, creating B_plus = F(B)"""
-        k = self.K * np.exp(-(self.r_internal - self.q_internal) * tau)
-        B_plus = self.B(tau) - eta * (self.B(tau) - k * self.N(tau) / self.D(tau))
+        k = self.K * np.exp(-(self._r_internal - self._q_internal) * tau)
+        B_plus = self._B(tau) - eta * (self._B(tau) - k * self._N(tau) / self._D(tau))
         return B_plus

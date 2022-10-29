@@ -40,19 +40,34 @@ def implicit_exercise_boundary_function(S, K, r, q, sigma, tau):
 def exercise_boundary(K, r, q, sigma, tau_points, option_type):
     """Calculating an approximative exercise boundary of an American Option for given points in time"""
     exercise_boundary = []
-    if option_type == 'Put':
-        for i in range(len(tau_points)-1):
-            solution = sco.root_scalar(f=implicit_exercise_boundary_function,
-                                       args=(K, r, q, sigma, tau_points[i]),
-                                       method='ridder', bracket=[alpha * K, K])
-            exercise_boundary.append(solution.root)
-    else:  # use Put-Call-Symmetry Trick here aswell
-        for i in range(len(tau_points)-1):
-            solution = sco.root_scalar(f=implicit_exercise_boundary_function,
-                                       args=(K, q, r, sigma, tau_points[i]),
-                                       method='ridder', bracket=[alpha * K, K])  ##NOTF
-            bval = K**2 / solution.root
-            exercise_boundary.append(bval)
+    try:
+        if option_type == 'Put':
+            for i in range(len(tau_points)-1):
+                solution = sco.root_scalar(f=implicit_exercise_boundary_function,
+                                           args=(K, r, q, sigma, tau_points[i]),
+                                           method='ridder', bracket=[alpha * K, K])
+                exercise_boundary.append(solution.root)
+        else:  # use Put-Call-Symmetry Trick here aswell
+            for i in range(len(tau_points)-1):
+                solution = sco.root_scalar(f=implicit_exercise_boundary_function,
+                                           args=(K, q, r, sigma, tau_points[i]),
+                                           method='ridder', bracket=[alpha * K, K])  ##NOTF
+                bval = K**2 / solution.root
+                exercise_boundary.append(bval)
+    except:
+        if option_type == 'Put':
+            for i in range(len(tau_points)-1):
+                solution = sco.root_scalar(f=implicit_exercise_boundary_function,
+                                           args=(K, r, q, sigma, tau_points[i]),
+                                           method='secant', x0 = alpha * K, x1= K)
+                exercise_boundary.append(solution.root)
+        else:  # use Put-Call-Symmetry Trick here aswell
+            for i in range(len(tau_points)-1):
+                solution = sco.root_scalar(f=implicit_exercise_boundary_function,
+                                           args=(K, q, r, sigma, tau_points[i]),
+                                           method='secant', x0 = alpha * K , x1= K)  ##NOTF
+                bval = K**2 / solution.root
+                exercise_boundary.append(bval)
     exercise_boundary.append(K)
     return exercise_boundary
 

@@ -1,12 +1,10 @@
 import numpy as np
 
-
 def transform_interval_to_cheby_standard(x, x_min, x_max):
     return (2 * (x - x_min) / (x_max - x_min)) - 1
 
 def transform_cheby_standard_to_intervall(cheby_points, x_min, x_max):
     return x_min + (x_max - x_min) * (cheby_points + 1) * 0.5
-
 
 class Interpolation:
     """Chebyshev Interpolation Instance"""
