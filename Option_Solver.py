@@ -102,14 +102,15 @@ class Option_Solver(FixpointsystemB):
             else:
                 return False
 
-    def training_data(self, n):
+    def gaussian_grid_boundary(self, n):
+        """returns triple tau, boundary, weigths"""
         x_vec, w_vec = roots_legendre(n)
         x_vec = np.real(x_vec)
-        #y_vec = [self.T * (x + 1) / 2 for x in x_vec]
-        y_vec = self.T * (x_vec + 1) / 2
+        #tau_vec = [self.T * (x + 1) / 2 for x in x_vec]
+        tau_vec = self.T * (x_vec + 1) / 2
         #boundary_vec = [self.Early_exercise_curve(y) for y in y_vec]
-        boundary_vec = self.Early_exercise_curve(y_vec)
-        return y_vec, boundary_vec, w_vec
+        boundary_vec = self.Early_exercise_curve(tau_vec)
+        return tau_vec, boundary_vec , w_vec
 
     def create_boundary(self):
         """calculate the boundary function of an American Option"""
