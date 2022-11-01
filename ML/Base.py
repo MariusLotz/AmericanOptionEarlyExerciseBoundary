@@ -25,29 +25,27 @@ def gaussian_premium(r, q, sigma, K, S, tau, tau_vec, boundary_vec, w_vec, T, op
         sum += integrand(tau_vec[i], boundary_vec[i])* w_vec[i]
     return  T/2.0 * sum
 
-def avg_boundary(boundary):
-    return [np.mean(boundary) for x in boundary]
-
-def main():
-    r, q, sigma, K, T, option_type = 0.1, 0.1, 0.45, 150, 1, 'Call'
-    option = os.Option_Solver(r, q, sigma, K, T, option_type)
-    option.create_boundary()
-    tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=12)
-    tau, S = T, 100
-    """
-    print(boundary_vec)
-    for i in range(len(boundary_vec)):
-        z = np.random.normal(loc=0.0, scale=0.000000001, size=None)
-        boundary_vec[i] *= (1+z)
-        """
-    print(boundary_vec)
-    print(avg_boundary(boundary_vec))
-    price = gaussian_premium(r, q, sigma, K, S, tau, tau_vec, boundary_vec, w_vec, T, option_type)
-    price2 = option.premium(S, tau)
-    print((price - price2) / price2)
-    price3 = gaussian_premium(r, q, sigma, K, S, tau, tau_vec, avg_boundary(boundary_vec), w_vec, T, option_type)
-    print(price, price3)
-
-
+def create_trainings_data():
+    T = 1
+    K = 100
+    S = [80, 100, 120]
+    SIGMA = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+    RQ = [0.02, 0.04, 0.06, 0.08, 0.1]
+    file = open('Small_Sample_31_10', 'a')
+    counter = 0
+    for sigma in SIGMA:
+        for r in RQ:
+            for q in RQ:
+                for s in S:
+                    counter +=1
+                    print(counter, " out of ", len(S) * len(SIGMA) * len(RQ)**2)
+                    option = os.Option_Solver(r, q, sigma, K, T, 'Call')
+                    option.create_boundary()
+                    tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
+                    premium = gaussian_premium(r, q, sigma, K, s, T, tau_vec, boundary_vec, w_vec, T, option_type='Call')
+                    entry = [r, q, sigma, list(boundary_vec), [s, premium]]
+                    file.write(str(entry))
+                    file.write("\n")
+    file.close()
 if __name__=="__main__":
-    main()
+    create_trainings_data()
