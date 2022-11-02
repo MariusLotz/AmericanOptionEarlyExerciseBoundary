@@ -62,6 +62,13 @@ American_premium = option.premium(S, tau)
 European_price = option.European_price(S, tau)
 ```
 
+#### Get EarlyExerciseBoundary:
+
+```
+Boundary_vec = option.Early_exercise_vec  # Boundary as vector
+Boundary = option.Early_exercise_curve()   # Boundary as function (Chebyshev Interpolation)
+```
+
 
 
 
