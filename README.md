@@ -59,7 +59,7 @@ S, tau = 120, 1  # tau has to be in [0, T]
 
 American_price = option.American_price(S, tau) 
 American_premium = option.premium(S, tau)
-European_price = European_price(S, tau)
+European_price = option.European_price(S, tau)
 ```
 
 
