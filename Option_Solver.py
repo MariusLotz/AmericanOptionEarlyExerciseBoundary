@@ -7,7 +7,7 @@ import QD_plus_exercise_boundary as QD_plus
 import BS_formulas as B
 from FixpointsystemB import FixpointsystemB
 
-H_min = 1e-35  # min-parameter for H-transformed value due to overflow
+H_min = 1e-25  # min-parameter for H-transformed value due to overflow
 
 class Option_Solver(FixpointsystemB):
     def __init__(self, interest_rate, dividend_yield, volatility, strike, maturity,

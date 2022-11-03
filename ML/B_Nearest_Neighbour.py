@@ -29,11 +29,11 @@ class B_Nearest_Neigbour:
 
     def load_and_process(self):
         """Loading data from txt. file and saving it into a dictionary"""
-        with self.txt_file as file:
-            lines = file.readlines()
-            for line in lines:
-                [r, q, sigma, boundary, [s, premium]] = literal_eval(line)
-                self.mapping_rqs_boundary[(r, q, sigma)] = np.array(boundary, dtype=float)
+        file = self.txt_file
+        lines = file.readlines()
+        for line in lines:
+            [r, q, sigma, boundary, [s, premium]] = literal_eval(line)
+            self.mapping_rqs_boundary[(r, q, sigma)] = np.array(boundary, dtype=float)
 
     def get_neighbouring_rqs(self, r_in, q_in, sigma_in):
         """Determine the neighbouring values (low, high) of r, q and sigma"""
