@@ -28,24 +28,23 @@ def gaussian_premium(r, q, sigma, K, S, tau, tau_vec, boundary_vec, w_vec, T, op
 def create_trainings_data():
     T = 1
     K = 100
-    S = [80, 100, 120]
+    S = 100
     SIGMA = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
     RQ = [0.02, 0.04, 0.06, 0.08, 0.1]
-    file = open('Small_Sample_31_10', 'a')
+    file = open('Small_Sample_3_11', 'a')
     counter = 0
     for sigma in SIGMA:
         for r in RQ:
             for q in RQ:
-                for s in S:
-                    counter +=1
-                    print(counter, " out of ", len(S) * len(SIGMA) * len(RQ)**2)
-                    option = os.Option_Solver(r, q, sigma, K, T, 'Call')
-                    option.create_boundary()
-                    tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
-                    premium = gaussian_premium(r, q, sigma, K, s, T, tau_vec, boundary_vec, w_vec, T, option_type='Call')
-                    entry = [r, q, sigma, list(boundary_vec), [s, premium]]
-                    file.write(str(entry))
-                    file.write("\n")
+                counter +=1
+                print(counter, " out of ", len(SIGMA) * len(RQ)**2)
+                option = os.Option_Solver(r, q, sigma, K, T, 'Call')
+                option.create_boundary()
+                tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
+                premium = gaussian_premium(r, q, sigma, K, S, T, tau_vec, boundary_vec, w_vec, T, option_type='Call')
+                entry = [r, q, sigma, list(boundary_vec), [S, premium]]
+                file.write(str(entry))
+                file.write("\n")
     file.close()
 if __name__=="__main__":
     create_trainings_data()
