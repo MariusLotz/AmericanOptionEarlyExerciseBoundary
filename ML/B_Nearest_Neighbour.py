@@ -49,7 +49,7 @@ class B_Nearest_Neigbour:
                 [self.RQ[q_low], self.RQ[q_high]],
                 [self.SIGMA[sigma_low], self.SIGMA[sigma_high]]]
 
-    def metric(self, r, q, sigma, r_approx, q_approx, sigma_approx,  a1=0.2, a2=0.2, p1=1, p2=1, p3=1):
+    def metric(self, r, q, sigma, r_approx, q_approx, sigma_approx,  a1=0.3, a2=0.4, p1=1.5, p2=2, p3=1.5):
         """Distance for two elements of the form (r, q, sigma)"""
         return a1 * abs(r - r_approx)**p1 + a2 * abs(q - q_approx)**p2 + (1-a1-a2) * abs(sigma - sigma_approx)**p3
 
@@ -64,7 +64,7 @@ class B_Nearest_Neigbour:
                 for sigma_approx in SIGMA:
                     val = self.mapping_rqs_boundary[(r_approx, q_approx, sigma_approx)]
                     self.neighbouring_boundaries.append(val)
-                    weight = self.metric(r, q, sigma, r_approx, q_approx, sigma_approx)
+                    weight = 1 / self.metric(r, q, sigma, r_approx, q_approx, sigma_approx)
                     sum_weight += weight
                     weighted_boundary += weight * val
         return weighted_boundary * (1 / sum_weight)

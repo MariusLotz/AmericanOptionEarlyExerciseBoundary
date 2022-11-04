@@ -13,13 +13,13 @@ def first_test():
     print()
     print(instance.price(100, 2))
 
-def mass_test(size=100):
+def mass_test(size=10):
     K = 100
     T = 1
     np.random.seed(seed=1)
     SIGMA = np.random.uniform(0.1, 0.5, size)
     RQ = np.random.uniform(0.02, 0.1, size)
-    S = np.random.uniform(80, 120, size)
+    S = np.random.uniform(100, 120, size)
 
 
 
@@ -41,7 +41,7 @@ def mass_test(size=100):
                     boundary2 = boundary_vec
                     price2 = Base.gaussian_premium(r, q, sigma, K, s, T, tau_vec, boundary2, w_vec, T, option_type='Call')
 
-                    print("r=", RQ[0], " q=", RQ[-1], " sigma=", SIGMA[0], " S=", s)
+                    print("r=", RQ[0], " q=", RQ[-1], " sigma=", SIGMA[0], " K=", K," S=", s, " (p_a - p) / p_a)=" , (price1 - price2)/price1)
                     print('approx price =', price1, "        ", 'price= ', price2)
                     #print()
                     #print(boundary1)
