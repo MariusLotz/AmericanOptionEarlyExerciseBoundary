@@ -53,11 +53,6 @@ def test_modell(model, x_train, y_train, S=[80, 120]):
             prem = gaussian_premium(x[0], x[1], x[2], K, s, T, tau_vec, boundary, w_vec, T, option_type)
             print("pred_prem= ", pred_prem, "prem= ", prem)
 
-
-
-
-
-
 def create_trainings_data():
     T = 1
     K = 100
