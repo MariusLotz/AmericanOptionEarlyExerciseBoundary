@@ -21,8 +21,6 @@ def mass_test(size=100):
     RQ = np.random.uniform(0.02, 0.1, size)
     S = np.random.uniform(80, 120, size)
 
-
-
     #r, q, sigma, S = RQ[0], RQ[-1], SIGMA[0], S[0]
     for r in RQ:
         for i in range(len(RQ)):

@@ -25,6 +25,39 @@ def gaussian_premium(r, q, sigma, K, S, tau, tau_vec, boundary_vec, w_vec, T, op
         sum += integrand(tau_vec[i], boundary_vec[i])* w_vec[i]
     return  T/2.0 * sum
 
+def load_and_return_trainingsdata(file_path):
+    """Loading data from txt. file and return trainingsdata"""
+    file = open(file_path)
+    lines = file.readlines()
+    x_train = []
+    y_train = []
+    for line in lines:
+        [r, q, sigma, boundary, [s, premium]] = eval(line)
+        x_train.append([r,q, sigma])
+        y_train.append(boundary)
+
+    return x_train, y_train
+
+def test_modell(model, x_train, y_train, S=[80, 120]):
+    option_type = 'Call'
+    K= 100
+    T= 1
+    option = os.Option_Solver(0.05, 0.05, 0.35, K, T, option_type)
+    option.create_boundary()
+    tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
+    for x,y in x_train, y_train:
+        pred_boundary = model(x).numpy()
+        boundary = y
+        for s in S:
+            pred_prem = gaussian_premium(x[0], x[1], x[2], K, s, T, tau_vec, pred_boundary, w_vec, T, option_type)
+            prem = gaussian_premium(x[0], x[1], x[2], K, s, T, tau_vec, boundary, w_vec, T, option_type)
+            print("pred_prem= ", pred_prem, "prem= ", prem)
+
+
+
+
+
+
 def create_trainings_data():
     T = 1
     K = 100
