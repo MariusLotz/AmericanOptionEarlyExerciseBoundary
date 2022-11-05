@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 import Option_Solver as os
+import tensorflow as tf
 
 def d_minus(r, q, sigma, tau, X):
     """d_- from Black Scholes formula"""
@@ -38,20 +39,27 @@ def load_and_return_trainingsdata(file_path):
 
     return x_train, y_train
 
-def test_modell(model, x_train, y_train, S=[80, 120]):
+def test_model_on_training_data(model, x_train, y_train, S=[80, 120]):
     option_type = 'Call'
     K= 100
     T= 1
     option = os.Option_Solver(0.05, 0.05, 0.35, K, T, option_type)
     option.create_boundary()
     tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
-    for x,y in x_train, y_train:
-        pred_boundary = model(x).numpy()
-        boundary = y
+    for i in range(len(x_train)):
+        x = tf.constant([x_train[i]])
+        pred_boundary = model(x).numpy()[0]
+        boundary = y_train[i]
+        print(boundary)
+        print()
+        print(pred_boundary)
+        print()
+        print()
+        print()
         for s in S:
-            pred_prem = gaussian_premium(x[0], x[1], x[2], K, s, T, tau_vec, pred_boundary, w_vec, T, option_type)
-            prem = gaussian_premium(x[0], x[1], x[2], K, s, T, tau_vec, boundary, w_vec, T, option_type)
-            print("pred_prem= ", pred_prem, "prem= ", prem)
+            pred_prem = gaussian_premium(x_train[i][0], x_train[i][1], x_train[i][2], K, s, T, tau_vec, pred_boundary, w_vec, T, option_type)
+            prem = gaussian_premium(x_train[i][0], x_train[i][1], x_train[i][2], K, s, T, tau_vec, boundary, w_vec, T, option_type)
+            #print("pred_prem= ", pred_prem, "prem= ", prem, "(pred - prem) / pred = ", (pred_prem-prem)/pred_prem)
 
 def create_trainings_data():
     T = 1
