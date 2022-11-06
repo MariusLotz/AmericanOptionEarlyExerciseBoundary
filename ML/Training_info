@@ -1,0 +1,18 @@
+## name= NN_of_Small_Sample_6_11
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Dense(1024, input_shape=(3,), activation='relu'))
+model.add(tf.keras.layers.Dense(512, activation='relu'))
+model.add(tf.keras.layers.Dense(256, activation='relu'))
+model.add(tf.keras.layers.Dense(128, activation='relu'))
+model.add(tf.keras.layers.Dense(25, activation='linear'))
+tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+    mode='auto', baseline=None, restore_best_weights=True)
+model.compile(optimizer='adam', loss='mae', metrics='mean_absolute_percentage_error')
+nepoch = 3999
+nbatch = 512
+# loss: 0.6587 - mean_absolute_percentage_error: 0.3286
+
+
+
+

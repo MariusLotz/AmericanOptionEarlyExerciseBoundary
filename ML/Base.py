@@ -69,14 +69,19 @@ def create_trainings_data():
     RQ = [0.02, 0.04, 0.06, 0.08, 0.1]
     file = open('Small_Sample_3_11', 'a')
     counter = 0
+    option_type = "Call"
     for sigma in SIGMA:
         for r in RQ:
             for q in RQ:
                 counter +=1
                 print(counter, " out of ", len(SIGMA) * len(RQ)**2)
-                option = os.Option_Solver(r, q, sigma, K, T, 'Call')
+                option = os.Option_Solver(r, q, sigma, K, T, option_type)
                 option.create_boundary()
                 tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
+                if option_type == "Call":
+                    boundary_vec *= (1 / max(1, r/q))
+                else:
+                    boundary_vec *= (1 / min(1, r / q))
                 premium = gaussian_premium(r, q, sigma, K, S, T, tau_vec, boundary_vec, w_vec, T, option_type='Call')
                 entry = [r, q, sigma, list(boundary_vec), [S, premium]]
                 file.write(str(entry))

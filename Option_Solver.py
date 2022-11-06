@@ -106,9 +106,7 @@ class Option_Solver(FixpointsystemB):
         """returns triple tau, boundary, weigths"""
         x_vec, w_vec = roots_legendre(n)
         x_vec = np.real(x_vec)
-        #tau_vec = [self.T * (x + 1) / 2 for x in x_vec]
         tau_vec = self.T * (x_vec + 1) / 2
-        #boundary_vec = [self.Early_exercise_curve(y) for y in y_vec]
         boundary_vec = self.Early_exercise_curve(tau_vec)
         return tau_vec, boundary_vec , w_vec
 
