@@ -14,5 +14,176 @@ nbatch = 512
 # loss: 0.6587 - mean_absolute_percentage_error: 0.3286
 
 
+"""Creating Modell"""
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Dense(1024, input_shape=(3,), activation='relu'))
+    tf.keras.layers.Dropout(0.5)
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(512, activation='relu'))
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(256, activation='relu'))
+    tf.keras.layers.Dropout(0.5)
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(128, activation='relu'))
+    model.add(tf.keras.layers.Dense(25, activation='linear'))
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 2999
+    nbatch = 64
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save("/content/drive/MyDrive/Github/AmericanOptionEarlyExerciseBoundary/ML/NN_of_Small_Sample_7_11")
 
 
+"""Creating Modell"""
+    model_path = "/content/drive/MyDrive/Github/AmericanOptionEarlyExerciseBoundary/ML/1NN_of_Small_Sample_7_11"
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Dense(1024, input_shape=(3,), activation='relu'))
+    tf.keras.layers.Dropout(0.2)
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(512, activation='relu'))
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(256, activation='relu'))
+    tf.keras.layers.Dropout(0.1)
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(128, activation='relu'))
+    model.add(tf.keras.layers.Dense(25, activation='linear'))
+    model.save(model_path)
+
+    model = model.load(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 50
+    nbatch = 16
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+    model = model.load(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 250
+    nbatch = 64
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+
+    model.save(model_path)
+    model = model.load(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 500
+    nbatch = 512
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+    model = model.load(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 1000
+    nbatch = 1024
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+
+
+import tensorflow as tf
+
+
+
+def main():
+    dest_file = \
+        '/content/drive/MyDrive/Github/AmericanOptionEarlyExerciseBoundary/ML/Large_Sample_6_11'
+    file = open(dest_file, 'r')
+    x_list = []
+    fx_list = []
+    count = 0
+    while True:
+        line = file.readline()
+        count += 1
+        if not line:
+            break
+        try:
+            xline = eval(line)
+        except:
+            continue
+        r, q, sigma = xline[0], xline[1], xline[2]
+        x = [r, q, sigma]  # sigma
+        fx_list.append([b / max(100, 100 * (r/q)) for b in xline[3]]) # normalized exercise boundary (25,1)
+        x_list.append(x)
+
+
+    file.close()
+
+    """Creating Modell"""
+    model_path = "/content/drive/MyDrive/Github/AmericanOptionEarlyExerciseBoundary/ML/1NN_of_Small_Sample_7_11"
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Dense(1024, input_shape=(3,), activation='relu'))
+    tf.keras.layers.Dropout(0.2)
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(512, activation='relu'))
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(256, activation='relu'))
+    tf.keras.layers.Dropout(0.1)
+    tf.keras.layers.BatchNormalization()
+    model.add(tf.keras.layers.Dense(128, activation='relu'))
+    model.add(tf.keras.layers.Dense(25, activation='linear'))
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    model.save(model_path)
+
+    model = tf.keras.models.load_model(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 50
+    nbatch = 16
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+    model = tf.keras.models.load_model(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 250
+    nbatch = 64
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+    model = tf.keras.models.load_model(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 500
+    nbatch = 512
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+    model = tf.keras.models.load_model(model_path)
+    tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', min_delta=10 ** (-6), patience=10, verbose=0,
+        mode='auto', baseline=None, restore_best_weights=True)
+    model.compile(optimizer='adam', loss='mse', metrics='mean_absolute_percentage_error')
+    nepoch = 1000
+    nbatch = 1024
+    model.fit(x_list, fx_list, epochs=nepoch, batch_size=nbatch)
+    model.save(model_path)
+
+if __name__=="__main__":
+    main()
+
+class CustomAccuracy(tf.keras.losses.Loss):
+  def __init__(self):
+    super().__init__()
+  def call(self, y_true, y_pred):
+    mse = tf.reduce_mean(tf.square(y_pred-y_true))
+    rmse = tf.math.sqrt(mse)
+    return rmse / tf.reduce_mean(tf.square(y_true)) - 1

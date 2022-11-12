@@ -11,7 +11,7 @@ H_min = 1e-25  # min-parameter for H-transformed value due to overflow
 
 class Option_Solver(FixpointsystemB):
     def __init__(self, interest_rate, dividend_yield, volatility, strike, maturity,
-                 option_type = 'Put', l=113, m=21, n=15, stop_by_diff=1e-6): # set stop_by_diff=None for fixed n
+                 option_type = 'Put', l=55, m=21, n=15, stop_by_diff=1e-6): # set stop_by_diff=None for fixed n
         self.r = interest_rate
         self.q = dividend_yield
         self.sigma = volatility
@@ -28,6 +28,7 @@ class Option_Solver(FixpointsystemB):
         self._B_new = None
         self.used_iteration_steps = 0
         self.stop_by_diff = stop_by_diff
+        self.max_diff_vec = []
         self.max_diff = -1.0
         self.option_type = option_type
         # B(0+) = K * max(1, r/q) (Call) and B(0+) = K * min(1, r/q) (Put) #
@@ -115,7 +116,6 @@ class Option_Solver(FixpointsystemB):
         stop_now = False
         while stop_now == False:
             # Fixpoint Iteration for each tau:
-            #print(self.max_diff)
             self.max_diff = 0
             for i in range(self._interpolation_base - 1):
                 # might change B_plus if its not working...
@@ -127,6 +127,7 @@ class Option_Solver(FixpointsystemB):
             self._Btau_vec = self._Btau_vec_new
             self.used_iteration_steps += 1
             stop_now = self._loop_end(self.used_iteration_steps)
+            self.max_diff_vec.append(self.max_diff)
         self.Early_exercise_vec = self._Btau_vec
         self.Early_exercise_curve = lambda tau: self._B(tau)
 

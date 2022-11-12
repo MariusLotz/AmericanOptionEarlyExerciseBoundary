@@ -69,7 +69,7 @@ class FixpointsystemB():
     def _B_plus_aggressive_eta(self, tau):
         """fixpoint scheme for one tau, creating B_plus = F(B), not properly tested,
         no use for high precision pricing, otherwise when working seems faster than other etas"""
-        eta = 1.6
+        eta = 1.66
         k = self.K * np.exp(-(self.r - self.q) * tau)
         B_plus = self._B(tau) - eta * (self._B(tau) - k * self._N(tau) / self._D(tau))
         diff = abs(B_plus - self._B(tau))
