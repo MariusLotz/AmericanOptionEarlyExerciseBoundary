@@ -1,6 +1,6 @@
 import numpy as np
 import ML.B_Nearest_Neighbour as B
-import Option_Solver as os
+import Solver.Option_Solver as os
 import ML.Base as Base
 
 def first_test():

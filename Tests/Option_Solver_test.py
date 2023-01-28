@@ -1,5 +1,5 @@
 import unittest
-import Option_Solver as OS
+import Solver.Option_Solver as OS
 
 RE = 10e-7  # relative difference allowed
 

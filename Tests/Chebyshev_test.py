@@ -1,4 +1,4 @@
-import Chebyshev
+import Solver.Chebyshev as Chebyshev
 import numpy as np
 import matplotlib.pyplot as plt
 

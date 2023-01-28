@@ -1,5 +1,5 @@
 import unittest
-import BS_formulas
+import Solver.BS_formulas as BS_formulas
 
 
 class QD_plus_tests(unittest.TestCase):

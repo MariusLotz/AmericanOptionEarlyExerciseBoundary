@@ -1,7 +1,7 @@
 """Testing of the QD_plus implementation compared to the results in the pdf
 MPRA_paper_15018 starting on the page 18. Allowing a 5% rel difference."""
 import unittest
-import QD_plus_exercise_boundary
+import Solver.QD_plus_exercise_boundary as QD_plus_exercise_boundary
 
 RE = 0.05  # relative difference allowed
 

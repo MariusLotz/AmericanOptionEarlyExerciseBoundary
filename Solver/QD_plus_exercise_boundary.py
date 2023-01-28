@@ -5,7 +5,7 @@ Boundary must be lager than P
 import numpy as np
 import scipy.optimize as sco
 import scipy.stats as stats
-import BS_formulas as bs
+import Solver.BS_formulas as bs
 
 alpha = 1e-7 # minimal boundary value allowed
 beta = 1e-07 # minimal value for sigma, r, q

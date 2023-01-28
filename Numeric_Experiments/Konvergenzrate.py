@@ -1,4 +1,4 @@
-import Option_Solver as OS
+import Solver.Option_Solver as OS
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt

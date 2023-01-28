@@ -1,4 +1,4 @@
-import Option_Solver as os
+import Solver.Option_Solver as os
 
 def put_call_symmetry_test():
     ### boundaries ###

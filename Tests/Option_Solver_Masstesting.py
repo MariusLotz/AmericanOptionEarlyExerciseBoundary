@@ -1,4 +1,4 @@
-import Option_Solver as os
+import Solver.Option_Solver as os
 import random as rr
 
 

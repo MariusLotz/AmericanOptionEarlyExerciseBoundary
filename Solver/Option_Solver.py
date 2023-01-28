@@ -2,10 +2,10 @@ import numpy as np
 import scipy.stats as stats
 import scipy.integrate as si
 from scipy.special import roots_legendre
-import Chebyshev
-import QD_plus_exercise_boundary as QD_plus
-import BS_formulas as B
-from FixpointsystemB import FixpointsystemB
+import Solver.Chebyshev as Chebyshev
+import Solver.QD_plus_exercise_boundary as QD_plus
+import Solver.BS_formulas as B
+from Solver.FixpointsystemB import FixpointsystemB
 
 H_min = 1e-25  # min-parameter for H-transformed value due to overflow
 

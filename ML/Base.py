@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as stats
-import Option_Solver as os
 import tensorflow as tf
+import Solver.Option_Solver as os
 
 def d_minus(r, q, sigma, tau, X):
     """d_- from Black Scholes formula"""
@@ -41,9 +41,6 @@ def load_and_return_trainingsdata(file_path):
 
 
     return x_train, y_train
-
-
-
 
 def test_model_on_test_data(model, x_train, S=[80, 120]):
     option_type = 'Call'
@@ -106,28 +103,7 @@ def test_model_on_training_data(model, x_train, y_train, S=[100, 110, 120, 130])
         #print()
     print(sum / len(x_train))
 
-def create_trainings_data():
-    T = 1
-    K = 100
-    S = 100
-    SIGMA = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
-    RQ = [0.02, 0.04, 0.06, 0.08, 0.1]
-    file = open('test', 'a')
-    counter = 0
-    option_type = "Call"
-    for sigma in SIGMA:
-        for r in RQ:
-            for q in RQ:
-                counter +=1
-                print(counter, " out of ", len(SIGMA) * len(RQ)**2)
-                option = os.Option_Solver(r, q, sigma, K, T, option_type)
-                option.create_boundary()
-                tau_vec, boundary_vec, w_vec = option.gaussian_grid_boundary(n=10)
-                premium = gaussian_premium(r, q, sigma, K, S, T, tau_vec, boundary_vec, w_vec, T, option_type='Call')
-                entry = [r, q, sigma, list(boundary_vec), [S, premium]]
-                file.write(str(entry))
-                file.write("\n")
-    file.close()
+
 
 if __name__=="__main__":
     model_path = "/home/user/PycharmProjects/AmericanOptionPricer/ML/5NN_of_Small_Sample_7_11"
