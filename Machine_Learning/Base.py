@@ -13,6 +13,8 @@ def d_plus(r, q, sigma,  tau, X):
     return (np.log(X) + (r - q) * tau + 0.5 * sigma ** 2 * tau) / (sigma * np.sqrt(tau))
 
 def gaussian_premium(r, q, sigma, K, S, tau, tau_vec, boundary_vec, w_vec, T, option_type):
+    if tau < 1e-7:
+        tau = 1e-7
     def integrand(u, Bu):
         z = S / Bu
         if option_type == 'Put':
