@@ -24,19 +24,67 @@ def prep_data():
     return df
 
 def stat():
-    print("start")
     data=prep_data()
+    data["b-prem_diff"] = abs(data["b-prem_diff"])
+    data["p-prem_diff"] = abs(data["p-prem_diff"])
+    data["b-prem_diff_rel"] = abs(data["b-prem_diff_rel"])
+    data["p-prem_diff_rel"] = abs(data["p-prem_diff_rel"])
+    #print(data)
     # mean:
+    print("mean")
     premTFc_diff_abs_mean = data["b-prem_diff"].mean()
     premTFp_diff_abs_mean = data["p-prem_diff"].mean()
-    df = df[data["prem"]>1e-6] # without very low prices 
+    df = data[data["prem"]>1e-6] # without very low prices 
     premTFc_diff_rel_mean = df["b-prem_diff_rel"].mean()
     premTFp_diff_rel_mean = df["p-prem_diff_rel"].mean()
     print(premTFc_diff_abs_mean)
     print(premTFp_diff_abs_mean)
     print(premTFc_diff_rel_mean)
     print(premTFp_diff_rel_mean)
-    print(df["p-prem_diff_rel"].describe)
+    print()
+    # median: 
+    print("median")
+    premTFc_diff_abs_median = data["b-prem_diff"].median()
+    premTFp_diff_abs_median = data["p-prem_diff"].median()
+    df = data[data["prem"]>1e-6] # without very low prices 
+    premTFc_diff_rel_median = df["b-prem_diff_rel"].median()
+    premTFp_diff_rel_median = df["p-prem_diff_rel"].median()
+    print(premTFc_diff_abs_median)
+    print(premTFp_diff_abs_median)
+    print(premTFc_diff_rel_median)
+    print(premTFp_diff_rel_median)
+    print()
+    # std: 
+    print("std")
+    premTFc_diff_abs_std = data["b-prem_diff"].std()
+    premTFp_diff_abs_std = data["p-prem_diff"].std()
+    df = data[data["prem"]>1e-6] # without very low prices 
+    premTFc_diff_rel_std = df["b-prem_diff_rel"].std()
+    premTFp_diff_rel_std = df["p-prem_diff_rel"].std()
+    print(premTFc_diff_abs_std)
+    print(premTFp_diff_abs_std)
+    print(premTFc_diff_rel_std)
+    print(premTFp_diff_rel_std)
+    print()
+    # 5 largest and smallest
+    print("5 worse")
+    premTFc_diff_abs_worse5 = data["b-prem_diff"].nlargest(5)
+    premTFp_diff_abs_worse5 = data["p-prem_diff"].nlargest(5)
+    premTFc_diff_rel_worse5 = data["b-prem_diff_rel"].nlargest(5)
+    premTFp_diff_rel_worse5 = data["p-prem_diff_rel"].nlargest(5)
+    print(premTFc_diff_abs_worse5)
+    print(premTFp_diff_abs_worse5)
+    print(premTFc_diff_rel_worse5)
+    print(premTFp_diff_rel_worse5)
+    print("5 smallest")
+    premTFc_diff_abs_top5 = data["b-prem_diff"].nsmallest(5)
+    premTFp_diff_abs_top5 = data["p-prem_diff"].nsmallest(5)
+    premTFc_diff_rel_top5 = data["b-prem_diff_rel"].nsmallest(5)
+    premTFp_diff_rel_top5 = data["p-prem_diff_rel"].nsmallest(5)
+    print(premTFc_diff_abs_top5)
+    print(premTFp_diff_abs_top5)
+    print(premTFc_diff_rel_top5)
+    print(premTFp_diff_rel_top5)
 
 def scatter_sigma_rel():
     data = prep_data()
