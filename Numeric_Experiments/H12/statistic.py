@@ -29,6 +29,8 @@ def stat():
     data["p-prem_diff"] = abs(data["p-prem_diff"])
     data["b-prem_diff_rel"] = abs(data["b-prem_diff_rel"])
     data["p-prem_diff_rel"] = abs(data["p-prem_diff_rel"])
+    data = data.sort_values("b-prem_diff_rel")
+    print(data[["prem", "p-prem_diff_rel", "b-prem_diff_rel", "p-prem_diff", "b-prem_diff"]])
     #print(data)
     # mean:
     print("mean")
@@ -46,7 +48,7 @@ def stat():
     print("median")
     premTFc_diff_abs_median = data["b-prem_diff"].median()
     premTFp_diff_abs_median = data["p-prem_diff"].median()
-    df = data[data["prem"]>1e-6] # without very low prices 
+    #df = data[data["prem"]>1e-6] # without very low prices 
     premTFc_diff_rel_median = df["b-prem_diff_rel"].median()
     premTFp_diff_rel_median = df["p-prem_diff_rel"].median()
     print(premTFc_diff_abs_median)
@@ -58,7 +60,7 @@ def stat():
     print("std")
     premTFc_diff_abs_std = data["b-prem_diff"].std()
     premTFp_diff_abs_std = data["p-prem_diff"].std()
-    df = data[data["prem"]>1e-6] # without very low prices 
+    #df = data[data["prem"]>1e-6] # without very low prices 
     premTFc_diff_rel_std = df["b-prem_diff_rel"].std()
     premTFp_diff_rel_std = df["p-prem_diff_rel"].std()
     print(premTFc_diff_abs_std)
@@ -66,7 +68,16 @@ def stat():
     print(premTFc_diff_rel_std)
     print(premTFp_diff_rel_std)
     print()
-    # 5 largest and smallest
+    print()
+    print()
+    dd = data[data["prem"]<1e-6]
+    #print(dd.size())
+    #df = dd.sort_values("p-prem_diff_rel")
+    #print(df[["prem", "p-prem_diff_rel", "b-prem_diff_rel", "p-prem_diff", "b-prem_diff"]])
+    #df = dd.sort_values("b-prem_diff_rel")
+    #print(df[["prem", "p-prem_diff_rel", "b-prem_diff_rel", "p-prem_diff", "b-prem_diff"]])
+
+    """# 5 largest and smallest
     print("5 worse")
     premTFc_diff_abs_worse5 = data["b-prem_diff"].nlargest(5)
     premTFp_diff_abs_worse5 = data["p-prem_diff"].nlargest(5)
@@ -84,7 +95,7 @@ def stat():
     print(premTFc_diff_abs_top5)
     print(premTFp_diff_abs_top5)
     print(premTFc_diff_rel_top5)
-    print(premTFp_diff_rel_top5)
+    print(premTFp_diff_rel_top5)"""
 
 def scatter_sigma_rel():
     data = prep_data()
@@ -108,7 +119,7 @@ def scatter_sigma_rel2():
     sns.scatterplot(y=data["b-prem_diff_rel"], x=data["sigma"], label="y=c")
     ax.set_xlabel("sigma")
     ax.set_ylabel("(premTFy - prem) / prem")
-    plt.ylim(-3, 3)
+    plt.ylim(-1, 1)
     plt.legend()
     plt.savefig("scatter_sigma_rel2", dpi=400)
 
@@ -156,11 +167,12 @@ def scatter_rminusq_rel2():
     sns.scatterplot(y=data["b-prem_diff_rel"], x=(data["r"] - data["q"]), label="y=c")
     ax.set_xlabel("r - q")
     ax.set_ylabel("(premTFy - prem) / prem")
-    plt.ylim(-3, 3)
+    plt.ylim(-1, 1)
     plt.legend()
     plt.savefig("scatter_rminusq_rel2", dpi=400)
 
 if __name__ == "__main__":
     stat()
+   
 
      
