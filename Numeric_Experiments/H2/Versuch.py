@@ -22,13 +22,17 @@ def load_and_return_data():
 def create_error_data(data):
     K=100
     T=1
-    S=100
-    file = open('error_data_call', 'w')
+    S=80
+    file = open('error_data_itm', 'w')
     option_type = "Put"
+    count=0
     for d in data:
+        count += 1
+        print(count)
         [r, q, sigma, boundary, tau_vec, w_vec] = d
         prem = Base.gaussian_premium(r, q, sigma, K, S, T, tau_vec, boundary, w_vec, T, option_type)
-        for p in [-8, -2, -0.5, -0.125, 0.125, 0.5, 2, 8]:
+        for p in [-2**(-7), -2**(-5), -2**(-3), -2**(-2), -2**(-1), -1, -2, -4, -8,
+                  2**(-7), 2**(-5), 2**(-3), 2**(-2), 2**(-1), 1, 2, 4, 8]:
             wrong_boundary = []
             for i in range(len(boundary)):
                 wrong_boundary.append(boundary[i] + (p/100) * boundary[i])
@@ -63,5 +67,5 @@ def create_error_data_2(data):
 
 if __name__=="__main__":
     data = load_and_return_data()
-    #create_error_data(data)
-    create_error_data_2(data)
+    create_error_data(data)
+    #create_error_data_2(data)
