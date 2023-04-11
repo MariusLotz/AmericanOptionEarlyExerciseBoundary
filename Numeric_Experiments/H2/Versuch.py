@@ -46,18 +46,17 @@ def create_error_data_2(data):
     K=100
     T=1
     S=100
-    file = open('error_data2_put', 'w')
+    file = open('error_data_atm_2', 'w')
     option_type = "Put"
     np.random.seed(1)
     for d in data:
         [r, q, sigma, boundary, tau_vec, w_vec] = d
         prem = Base.gaussian_premium(r, q, sigma, K, S, T, tau_vec, boundary, w_vec, T, option_type)
-        for p in [0.125, 0.125, 0.5, 2, 8, 16, 32]:
+        for p in [2**(-7), 2**(-5), 2**(-3), 2**(-2), 2**(-1), 2**(-0), 2**(1), 2**(2), 2**(3)]:
             wrong_boundary = []
             for i in range(len(boundary)):
-                c = np.random.normal(loc=0, scale=(p/100) * boundary[i])
+                c = np.random.normal(loc=0, scale=((p/100) * boundary[i])* 2)
                 y = boundary[i] + c
-                print(boundary[i], y)
                 wrong_boundary.append(y)
             wrong_prem = Base.gaussian_premium(r, q, sigma, K, S, T, tau_vec, wrong_boundary, w_vec, T, option_type)
             entry = [r, q, sigma, p, prem, wrong_prem]
@@ -67,5 +66,5 @@ def create_error_data_2(data):
 
 if __name__=="__main__":
     data = load_and_return_data()
-    create_error_data(data)
-    #create_error_data_2(data)
+    #create_error_data(data)
+    create_error_data_2(data)
