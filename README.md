@@ -2,9 +2,9 @@
 Dieses Git Repository wird nicht mehr verändert werden (Stand 01.05.2023),
 da es Teil der Masterarbeit:
 
-* Schnelle Preisbestimmung amerikanischer
+_Schnelle Preisbestimmung amerikanischer
 Optionen im Black Scholes Modell
-Erlernen des kritischen Aktienpreises Sf (t)*
+Erlernen des kritischen Aktienpreises Sf (t)_
 
 ist.
 
