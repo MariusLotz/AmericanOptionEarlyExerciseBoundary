@@ -1,12 +1,10 @@
-# Version für der Masterarbeit 
+# Version für die Masterarbeit 
 Dieses Git Repository wird nicht mehr verändert werden (Stand 01.05.2023),
 da es Teil der Masterarbeit:
 
-Schnelle Preisbestimmung amerikanischer
-Optionen im Black Scholes Modell
-Erlernen des kritischen Aktienpreises Sf (t)
-von
-Marius Lotz
+###Schnelle Preisbestimmung amerikanischer
+###Optionen im Black Scholes Modell
+###Erlernen des kritischen Aktienpreises Sf (t)
 
 ist.
 
@@ -16,7 +14,7 @@ Bank of America Merrill Lynch" beschriebenen Algorithmus in Python implementiert
 Im Ordner Numeric_Experiments findet man den Code und die Daten für die numerischen Experimente für die Hypothesen. Code und Daten zum Kapitel 4.8 findet man in Machine_Learning/precision_neural_network. Code und Daten zum numerischen Experiment zur Laufzeit
 des Option Solvers findet man in Numeric_Experiments/To_Be_Sorted.
 
-Um den schnellen Optionspreisrechner zu testen benutzen der Einfacheit halber bitte die Datei
+Um den schnellen Optionspreisrechner zu testen benutzen Sie bitte der Einfacheit halber die Datei
 Option_pricer.
 
 
