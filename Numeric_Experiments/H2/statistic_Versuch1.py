@@ -76,7 +76,7 @@ def table_error_median_small_p():
     data_otm = prep_data("error_data_otm")
     new_df = pd.DataFrame(columns=["p", "Median (itm)", "Mittel (itm)", "Median (atm)", "Mittel (atm)", "Median (otm)", "Mittel (otm)"])
 
-    for p in [2**(-7), -2**(-7), 2**(-5), -2**(-5), 2**(-3), -2**(-3), 2**(-2), -2**(-2)]:
+    for p in [2**(-7), -2**(-7), 2**(-5), -2**(-5), 2**(-3), -2**(-3), 2**(-2), -2**(-2), 2**(3) ]:
         new_df = new_df.append({"p": p, "Median (itm)": data_itm[data_itm["p"] == p]["diff_rel"].median()*100,
          "Mittel (itm)": data_itm[data_itm["p"] == p]["diff_rel"].mean()*100, 
          "Median (atm)": data_atm[data_atm["p"] == p]["diff_rel"].median()*100,
@@ -158,7 +158,8 @@ if __name__ == "__main__":
     #error_median_sigma((2**(-7)))
     #error_median_p()
     #table_error_median_small_p()
-    stat()
+    #stat()
+    table_error_median_small_p()
     
    
 

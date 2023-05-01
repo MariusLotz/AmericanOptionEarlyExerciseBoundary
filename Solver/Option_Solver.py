@@ -7,11 +7,12 @@ import Solver.QD_plus_exercise_boundary as QD_plus
 import Solver.BS_formulas as B
 from Solver.FixpointsystemB import FixpointsystemB
 
+
 H_min = 1e-25  # min-parameter for H-transformed value due to overflow
 
 class Option_Solver(FixpointsystemB):
     def __init__(self, interest_rate, dividend_yield, volatility, strike, maturity,
-                 option_type = 'Put', l=55, m=21, n=15, stop_by_diff=1e-6): # set stop_by_diff=None for fixed n
+                 option_type = 'Put', l=99, m=25, n=15, stop_by_diff=1e-6): # set stop_by_diff=None for fixed n
         self.r = interest_rate
         self.q = dividend_yield
         self.sigma = volatility
@@ -44,7 +45,7 @@ class Option_Solver(FixpointsystemB):
             Extrem small values for the interest rate (r) or volatility (sigma) are problematic! 
             """)
 
-    def premium(self, S, tau, boundary = None): #NOTF
+    def premium(self, S, tau, inp_boundary = None): #NOTF
         """American premium for given boundary=exact_boundary of length."""
         if tau > self.T: raise ValueError("tau can not be larger than the maturity!")
         if tau < 0: raise ValueError("tau can not be negativ!")
@@ -58,13 +59,11 @@ class Option_Solver(FixpointsystemB):
                     a = self.q * S * np.exp(-self.q * (tau - u)) * stats.norm.cdf(self._d_plus(tau - u, z))
                     b = self.r * self.K * np.exp(-self.r * (tau - u)) * stats.norm.cdf(self._d_minus(tau - u, z))
                 return a - b
-        if type(boundary) == list:
-            print("""
-            make sure the boundary values are in order in regard to the '.tau_grid'
-            """)
-            _cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
-            _cheby_H.fit_by_y_values([self._H(B) for B in boundary])  # create H-curve
-            boundary = lambda tau: self._H_inverse(self._cheby_H.value(np.sqrt(tau)))  # define B-curve
+        if inp_boundary is not None:
+            #print("make sure the boundary values are in order in regard to the .tau_grid")
+            cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
+            cheby_H.fit_by_y_values([self._H(B) for B in inp_boundary])  # create H-curve
+            boundary = lambda tau: self._H_inverse(cheby_H.value(np.sqrt(tau)))  # define B-curve
         elif self.Early_exercise_curve == None:
             print("""
             QD_plus boundary was used. Therefore outcome will be an approximation only.
@@ -72,7 +71,7 @@ class Option_Solver(FixpointsystemB):
             """)
             _cheby_H = Chebyshev.Interpolation(self._interpolation_base, np.sqrt(self.T), 0)
             _cheby_H.fit_by_y_values([self._H(B) for B in self.QD_plus_exercise_vec])  # create H-curve
-            boundary = lambda tau: self._H_inverse(_cheby_H.value(np.sqrt(tau)))  # define B-curve
+            boundary = lambda tau: self._H_inverse(cheby_H.value(np.sqrt(tau)))  # define B-curve
         else:
             boundary = self.Early_exercise_curve
         return max(si.fixed_quad(integrand, 0, tau, n=self._integration_base)[0], 0)

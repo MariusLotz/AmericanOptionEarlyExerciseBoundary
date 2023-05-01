@@ -28,6 +28,22 @@ def create_median_for_p(data):
         new_df = new_df.append({"p": p, "median": data[data["p"] == p]["diff_rel"].median()*100}, ignore_index=True)
     return new_df  
 
+def table_error_median_small_p():
+    data_atm = prep_data("error_data_atm_2")
+    data_itm = prep_data("error_data_itm_2")
+    data_otm = prep_data("error_data_otm_2")
+    new_df = pd.DataFrame(columns=["p", "Median (itm)", "Mittel (itm)", "Median (atm)", "Mittel (atm)", "Median (otm)", "Mittel (otm)"])
+
+    for p in [2**(-7), 2**(-5), 2**(-3),  2**(-2), 2**(-1), 2**(3)]:
+        new_df = new_df.append({"p": p, "Median (itm)": data_itm[data_itm["p"] == p]["diff_rel"].median()*100,
+         "Mittel (itm)": data_itm[data_itm["p"] == p]["diff_rel"].mean()*100, 
+         "Median (atm)": data_atm[data_atm["p"] == p]["diff_rel"].median()*100,
+         "Mittel (atm)": data_atm[data_atm["p"] == p]["diff_rel"].mean()*100,
+         "Median (otm)": data_otm[data_otm["p"] == p]["diff_rel"].median()*100,
+         "Mittel (otm)": data_otm[data_otm["p"] == p]["diff_rel"].mean()*100}, ignore_index=True)
+    #print(new_df)
+    print(new_df.to_latex(index=False))
+
 def error_median_p():
 
     plt.figure()
@@ -84,4 +100,5 @@ def error_median_sigma(p):
 
 if __name__ == "__main__":
     #error_median_p()
-    error_median_sigma((2**(3)))
+    #error_median_sigma((2**(3)))
+    table_error_median_small_p()

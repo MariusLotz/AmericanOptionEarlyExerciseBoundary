@@ -101,7 +101,7 @@ def test_model_on_training_data(model, x_train, y_train, S=[100, 110, 120, 130])
             if (pred_prem-prem)/(pred_prem) > big:
                 big = (pred_prem-prem)/pred_prem
 
-            #print("pred_prem= ", pred_prem, "prem= ", prem, "(pred - prem) / pred = ", (pred_prem-prem)/pred_prem)
+        #print("pred_prem= ", pred_prem, "prem= ", prem, "(pred - prem) / pred = ", (pred_prem-prem)/pred_prem)
         #print()
         #print()
     print(sum / len(x_train))
