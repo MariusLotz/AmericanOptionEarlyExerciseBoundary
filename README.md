@@ -1,3 +1,26 @@
+# Version für der Masterarbeit 
+Dieses Git Repository wird nicht mehr verändert werden (Stand 01.05.2023),
+da es Teil der Masterarbeit:
+
+Schnelle Preisbestimmung amerikanischer
+Optionen im Black Scholes Modell
+Erlernen des kritischen Aktienpreises Sf (t)
+von
+Marius Lotz
+
+ist.
+
+Es beinhaltet
+einen schnellen Optionspreisrechner im Ordner Solver, welcher den in "High Performance American Option Pricing, 2015, written by Leif Andersen, Mark Lake and Dimitri Offengenden,
+Bank of America Merrill Lynch" beschriebenen Algorithmus in Python implementiert.
+Im Ordner Numeric_Experiments findet man den Code und die Daten für die numerischen Experimente für die Hypothesen. Code und Daten zum Kapitel 4.8 findet man in Machine_Learning/precision_neural_network. Code und Daten zum numerischen Experiment zur Laufzeit
+des Option Solvers findet man in Numeric_Experiments/To_Be_Sorted.
+
+Um den schnellen Optionspreisrechner zu testen benutzen der Einfacheit halber bitte die Datei
+Option_pricer.
+
+
+
 # AmericanOptionEarlyExerciseBoundary
 This project is about calculating high precision American Option Early Exercise Boundaries for the Black-Scholes-Modell,
 where 
